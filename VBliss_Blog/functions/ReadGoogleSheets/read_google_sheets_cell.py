@@ -1,20 +1,17 @@
 import os
-from google.oauth2 import service_account
+from google.auth import default
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import json
 
 def lambda_handler(event, context):
-    # Path to your service account JSON file
-    key_path = "directed-mender-423411-p2-94eed7d7274c.json"
-
-    # Load credentials from the service account file
-    credentials = service_account.Credentials.from_service_account_file(
-        key_path, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
-    )
-
-    # Build the service
-    service = build('sheets', 'v4', credentials=credentials)
+    # The credentials will be automatically obtained using Workload Identity Federation
+    credentials, project = default()
     
+    # If credentials require refreshing, do it now
+    if credentials.expired:
+        credentials.refresh(Request())
+
     # Create a Google Sheets API client
     sheets_service = build('sheets', 'v4', credentials=credentials)
     

@@ -42,6 +42,7 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Environment:
         Variables:
+          GOOGLE_APPLICATION_CREDENTIALS: 'clientLibraryConfig-aws-lstbgacc.json'
           SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M'
           RANGE_NAME: 'WebFlow!A1:M9999'
       Policies:
