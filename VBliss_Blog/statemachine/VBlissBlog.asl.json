@@ -1,0 +1,70 @@
+{
+    "Comment": "A state machine that writes blog posts for VBliss.",
+    "StartAt": "Get Google Sheet Value",
+    "States": {
+      "Get Google Sheet Value": {
+        "Type": "Task",
+        "Resource": "${ReadGoogleSheetsCellArn}",
+        "ResultPath": "$.metaOut",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "States.TaskFailed"
+            ],
+            "IntervalSeconds": 15,
+            "MaxAttempts": 5,
+            "BackoffRate": 1.5
+          }
+        ],
+        "Next": "GenerateTableOfContents"
+      },
+      "GenerateTableOfContents": {
+        "Type": "Task",
+        "Resource": "${GenerateTableOfContentsArn}",
+        "ResultPath": "$.ToCOut",
+        "Retry": [
+            {
+              "ErrorEquals": [
+                "States.TaskFailed"
+              ],
+              "IntervalSeconds": 15,
+              "MaxAttempts": 5,
+              "BackoffRate": 1.5
+            }
+          ],
+        "Next": "ProcessSections"
+      },
+      "ProcessSections": {
+        "Type": "Map",
+        "ItemsPath": "$.ToCOut.body",
+        "Parameters": {
+            "item.$": "$$.Map.Item.Value",
+            "metaOut.$": "$.metaOut"
+          },
+        "MaxConcurrency": 0,
+        "Iterator": {
+          "StartAt": "WaitTime",
+          "States": {
+            "WaitTime": {
+              "Type": "Wait",
+              "Seconds": 61,
+              "Next": "ProcessSection"
+            },
+            "ProcessSection": {
+                "Type": "Task",
+                "Resource": "${ProcessSectionLambdaArn}",
+                "End": true
+              }
+          }
+        },
+        "ResultPath": "$.processedSections",
+        "Next": "ConcatenateResults"
+      },
+      "ConcatenateResults": {
+        "Type": "Task",
+        "Resource": "${ConcatenateResultsLambdaArn}",
+        "InputPath": "$.processedSections",
+        "End": true
+      }
+    }
+  }

@@ -1,0 +1,43 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+        "name": "Python: Current File",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal",
+        "env": {
+            "AWS_SAM_STACK_NAME": "VBliss-Blog"
+        }
+        },
+        {
+        "name": "Python: pytest",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "pytest",
+        "args": [
+            "-v",
+            "tests"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": {
+            "AWS_SAM_STACK_NAME": "VBliss-Blog"
+        }
+        },     
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "VBliss_Blog:ReadGoogleSheetsCell",
+            "invokeTarget": {
+                "target": "template",
+                "templatePath": "${workspaceFolder}/VBliss_Blog/template.yaml",
+                "logicalId": "ReadGoogleSheetsCell"
+            },
+            "lambda": {
+                "payload": {},
+                "environmentVariables": {}
+            }
+        }
+    ]
+}

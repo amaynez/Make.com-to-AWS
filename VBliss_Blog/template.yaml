@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  VBliss-Blog
+
+  Sample SAM Template for VBliss-Blog
+
+Resources:
+  VBlissBlogStateMachine:
+    Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    Properties:
+      DefinitionUri: statemachine/VBlissBlog.asl.json
+      DefinitionSubstitutions:
+        ReadGoogleSheetsCellArn: !GetAtt ReadGoogleSheetsCell.Arn
+        GenerateTableOfContentsArn: !GetAtt GenerateTableOfContents.Arn
+        ProcessSectionLambdaArn: !GetAtt ProcessSectionLambda.Arn
+        ConcatenateResultsLambdaArn: !GetAtt ConcatenateResultsLambda.Arn
+      Events:
+        BlogPostingSchedule:
+          Type: Schedule # More info about Schedule Event Source: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-statemachine-schedule.html
+          Properties:
+            Description: Schedule to write the blog post every hour
+            Enabled: False # This schedule is disabled by default to avoid incurring charges.
+            Schedule: "rate(1 hour)"
+      Policies: # Find out more about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ReadGoogleSheetsCell
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateTableOfContents
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ProcessSectionLambda
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ConcatenateResultsLambda
+
+  ReadGoogleSheetsCell:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/ReadGoogleSheets
+      Handler: read_google_sheets_cell.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M'
+          RANGE_NAME: 'WebFlow!A1:M9999'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+  
+  GenerateTableOfContents:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/CreateTOC
+      Handler: generate_table_of_contents.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0'
+          BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+          BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
+          BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
+          SYSTEM_PROMPT: 'Eres un generador de tablas de contenido de posts para un blog de bienestar sexual, tu tarea es ayudar a crear un blog educativo sobre sexualidad y relaciones mediante una tabla de contenido que abarque todo el tema. Aborda los temas con franqueza pero evitando lenguaje crudo o descripciones gráficas. Enfócate en promover el consentimiento, el respeto, la salud y la seguridad. Adapta el tono y contenido para una audiencia general. Cita fuentes confiables cuando sea relevante. Utilizarás la plantilla que el usuario te proveerá de manera estricta.'
+          USER_PROMPT: 'Tu tarea es actuar como un experto en salud sexual y determinar los temas a tocar en una tabla de contenido para un blog informativo sobre el siguiente tema: #####. Genera la tabla de contenido en el siguiente formato JSON:  \n{\n  \"titulo\": \"Titulo del Post de Blog\",\n  \"tdc\": [\n    {\n      \"titulo\": \"Tema 1\",\n      \"sub-temas\": [\n        {\n          \"titulo\": \"sub-tema 1.1\",\n          \"sub-temas\": [\n            {\n              \"titulo\": \"sub-tema 1.1.1\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"titulo\": \"Tema 2\",\n      \"sub-temas\": []\n    }\n  ]\n}'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'bedrock:InvokeModel'
+              Resource: 'arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-3-opus-20240229-v1:0'
+
+  ProcessSectionLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/ProcessSections
+      Handler: Process_Section_Lambda.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0'
+          BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+          BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
+          BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
+          SYSTEM_PROMPT: 'Eres un generador de posts para un blog de bienestar sexual, tu tarea es ayudar a crear un blog educativo sobre sexualidad y relaciones con el siguiente título: "#####". Aborda los temas con franqueza pero evitando lenguaje crudo o descripciones gráficas. Enfócate en promover el consentimiento, el respeto, la salud y la seguridad. Adapta el tono y contenido para una audiencia general. Cita fuentes confiables cuando sea relevante. Lo vas a hacer sin utilizar ningún caracter especial. Deberás utilizar etiquetas HTML para dar formato, pero sin incluir las etiquetas <html>, <head> o <body>. Usa etiquetas como <h1>, <h2>, <p>, <strong>, <em>, <ul>, <li>, etc. para estructurar y formatear el contenido. El resultado debe ser solo el contenido formateado, listo para insertarse dentro del cuerpo de un documento HTML existente.'
+          USER_PROMPT: 'Crea una sección de un post de blog basado en la siguiente tabla de contenido: "#####" . Asegurate de usar la siguiente frase clave: "$$$$$"; en el primer párrafo y además usarla al menos 5 veces en el texto. Al crear el contenido, sigue estas pautas: Aborda el tema con franqueza pero usando un lenguaje apropiado para todo público. Evita terminología cruda, vulgar o explícitamente sexual. Enfócate en proveer información basada en hechos de fuentes confiables. Cita estudios o estadísticas relevantes cuando sea posible. Promueve mensajes positivos de consentimiento, comunicación, seguridad y respeto en las relaciones sexuales. Incluye recursos o información de contacto de organizaciones de salud sexual si es relevante. Usa un tono cálido, empático y libre de prejuicios. Organiza la sección del artículo en secciones con subtítulos para una fácil lectura. Recuerda, el objetivo es educar y empoderar a los lectores con información precisa sobre salud sexual, no crear contenido erótico o pornográfico. Aborda el tema con sensibilidad y buen gusto.'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'bedrock:InvokeModel'
+              Resource: '*'
+
+  ConcatenateResultsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/ConcatenateResults
+      Handler: Concatenate_Results.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+#   StockCheckerFunction:
+#     Type: AWS::Serverless::Function # More info about Function Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+#     Properties:
+#       CodeUri: functions/stock_checker/
+#       Handler: app.lambda_handler
+#       Runtime: python3.12
+#       Architectures:
+#         - x86_64
+
+#   StockSellerFunction:
+#     Type: AWS::Serverless::Function
+#     Properties:
+#       CodeUri: functions/stock_seller/
+#       Handler: app.lambda_handler
+#       Runtime: python3.12
+#       Architectures:
+#         - x86_64
+
+#   StockBuyerFunction:
+#     Type: AWS::Serverless::Function
+#     Properties:
+#       CodeUri: functions/stock_buyer/
+#       Handler: app.lambda_handler
+#       Runtime: python3.12
+#       Architectures:
+#         - x86_64
+
+#   TransactionTable:
+#     Type: AWS::Serverless::SimpleTable # More info about SimpleTable Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-simpletable.html
+#     Properties:
+#       PrimaryKey:
+#         Name: Id
+#         Type: String
+#       ProvisionedThroughput:
+#         ReadCapacityUnits: 1
+#         WriteCapacityUnits: 1
+
+Outputs:
+  # StockTradingStateMachineHourlyTradingSchedule is an implicit Schedule event rule created out of Events key under Serverless::StateMachine
+  # Find out more about other implicit resources you can reference within SAM
+  # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-generated-resources.html
+  VBlissBlogStateMachineArn:
+    Description: "VBliss Log State machine ARN"
+    Value: !Ref VBlissBlogStateMachine
+  VBlissBlogStateMachineRoleArn:
+    Description: "IAM Role created for VBliss Blog State machine based on the specified SAM Policy Templates"
+    Value: !GetAtt VBlissBlogStateMachineRole.Arn
