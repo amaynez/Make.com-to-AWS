@@ -1,20 +1,38 @@
 import os
+import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-import json
+import boto3
+from botocore.exceptions import ClientError
 
-def lambda_handler(event, context):
-    # Path to your service account JSON file
-    key_path = "directed-mender-423411-p2-94eed7d7274c.json"
+def get_secret(secret_name, region_name):
 
-    # Load credentials from the service account file
-    credentials = service_account.Credentials.from_service_account_file(
-        key_path, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
     )
 
-    # Build the service
-    service = build('sheets', 'v4', credentials=credentials)
-    
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        # For a list of exceptions thrown, see
+        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        raise e
+
+    return get_secret_value_response
+
+def lambda_handler(event, context):
+    secret_name = os.environ['SECRET_NAME']
+    region_name = os.environ['REGION_NAME']
+    secret = json.loads(get_secret(secret_name, region_name))
+
+    # Create credentials using the JSON data from Secrets Manager
+    credentials = service_account.Credentials.from_service_account_info(secret)
+
     # Create a Google Sheets API client
     sheets_service = build('sheets', 'v4', credentials=credentials)
     

@@ -45,6 +45,8 @@ Resources:
           GOOGLE_APPLICATION_CREDENTIALS: 'clientLibraryConfig-aws-lstbgacc.json'
           SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M'
           RANGE_NAME: 'WebFlow!A1:M9999'
+          SECRET_NAME: 'GoogleJSONCredentials'
+          REGION_NAME: 'us-west-2'
       Policies:
         - AWSLambdaBasicExecutionRole
   

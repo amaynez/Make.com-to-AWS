@@ -1,16 +1,37 @@
 import os
-from google.auth import default
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
 import json
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import boto3
+from botocore.exceptions import ClientError
+
+def get_secret(secret_name, region_name):
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        # For a list of exceptions thrown, see
+        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        raise e
+
+    return get_secret_value_response
 
 def lambda_handler(event, context):
-    # The credentials will be automatically obtained using Workload Identity Federation
-    credentials, project = default()
-    
-    # If credentials require refreshing, do it now
-    if credentials.expired:
-        credentials.refresh(Request())
+    secret_name = os.environ['SECRET_NAME']
+    region_name = os.environ['REGION_NAME']
+    secret = json.loads(get_secret(secret_name, region_name))
+
+    # Create credentials using the JSON data from Secrets Manager
+    credentials = service_account.Credentials.from_service_account_info(secret)
 
     # Create a Google Sheets API client
     sheets_service = build('sheets', 'v4', credentials=credentials)
