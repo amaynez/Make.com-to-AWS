@@ -56,8 +56,7 @@ def lambda_handler(event, context):
         os.environ['BEDROCK_MODEL_ID_1'],
         os.environ['BEDROCK_MODEL_ID_2'],
         os.environ['BEDROCK_MODEL_ID_3'],
-        os.environ['BEDROCK_MODEL_ID_4'],
-        os.environ['BEDROCK_MODEL_ID_5']
+        os.environ['BEDROCK_MODEL_ID_4']
     ]
  
     request_body = {
@@ -76,6 +75,7 @@ def lambda_handler(event, context):
         ]
     }
     for model_id in model_ids:
+        response_data = None
         try:
             # Make the API call to Amazon Bedrock using invoke_model
             response = bedrock_runtime.invoke_model(
@@ -115,10 +115,16 @@ def lambda_handler(event, context):
                 }
             }
         except json.JSONDecodeError as json_err:
-            error_message = f"JSON decoding error: {str(json_err)}\nResponse text: {response_text}"
-            print(error_message)
+            if response_text:
+                error_message = f"JSON decoding error: {str(json_err)}\nResponse text: {response_text}"
+            else:
+                error_message = f"JSON decoding error: {str(json_err)}"
+            print(error_message) # This will log the error in CloudWatch
         except Exception as e:
-            error_message = f"An error occurred: {str(e)}\nResponse data: {json.dumps(response_data, indent=2)}"
+            if response_data:
+                error_message = f"An error occurred: {str(e)}\nResponse data: {json.dumps(response_data, indent=2)}"
+            else:
+                error_message = f"An error occurred: {str(e)}"
             print(error_message)  # This will log the error in CloudWatch
 
     # If none of the models succeeded, return an error

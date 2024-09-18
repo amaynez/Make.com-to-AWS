@@ -6,8 +6,6 @@ import boto3
 from botocore.exceptions import ClientError
 
 def get_secret(secret_name, region_name):
-
-    # Create a Secrets Manager client
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
@@ -19,16 +17,23 @@ def get_secret(secret_name, region_name):
             SecretId=secret_name
         )
     except ClientError as e:
-        # For a list of exceptions thrown, see
-        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
         raise e
 
-    return get_secret_value_response
+    # Return the secret string directly
+    if 'SecretString' in get_secret_value_response:
+        return get_secret_value_response['SecretString']
+    else:
+        # In case the secret is binary
+        return get_secret_value_response['SecretBinary']
+
 
 def lambda_handler(event, context):
     secret_name = os.environ['SECRET_NAME']
     region_name = os.environ['REGION_NAME']
-    secret = json.loads(get_secret(secret_name, region_name))
+    secret_string = get_secret(secret_name, region_name)
+
+    # Parse the JSON string
+    secret = json.loads(secret_string)
 
     # Create credentials using the JSON data from Secrets Manager
     credentials = service_account.Credentials.from_service_account_info(secret)
