@@ -6,7 +6,7 @@ def lambda_handler(event, context):
     
     # Concatenate all processed sections
     for section in processed_sections:
-        blog_post += section['content'] + "\n\n"
+        blog_post += section['body'] + "\n\n"
     
     # Remove any extra newlines
     blog_post = blog_post.strip()

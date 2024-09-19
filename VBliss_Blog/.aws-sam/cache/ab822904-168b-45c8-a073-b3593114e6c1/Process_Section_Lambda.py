@@ -53,20 +53,18 @@ def lambda_handler(event, context):
                 body=json.dumps(request_body)
             )
             
+            print(f"Model Used: {model_id}")
+
             # Parse the JSON response
             response_data = json.loads(response['body'].read())
             
             response_text = response_data['content'][0]['text']
 
-            # Parse the JSON string into a Python dictionary
-            data = json.loads(response_text)
-
             # Log the response text for debugging
-            print(f"LLM Out: {data}")
-            print(f"Model Used: {model_id}")
+            print(f"LLM Out: {response_text}")
 
             output = {
-                "blog_section": data
+                "blog_section": response_text
             }
 
             return {
