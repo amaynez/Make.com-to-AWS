@@ -3522,7 +3522,7 @@
                                 "scoped": "true",
                                 "connection": "wordpress4"
                             },
-                            "label": "My WordPress connection (amaynez)"
+                            "label": "My WordPress connection"
                         }
                     }
                 },
@@ -3682,7 +3682,7 @@
                                 "scoped": "true",
                                 "connection": "wordpress4"
                             },
-                            "label": "My WordPress connection (amaynez)"
+                            "label": "My WordPress connection"
                         }
                     }
                 },
@@ -3872,7 +3872,7 @@
                                 "scoped": "true",
                                 "connection": "wordpress4"
                             },
-                            "label": "My WordPress connection (amaynez)"
+                            "label": "My WordPress connection"
                         }
                     }
                 },
@@ -4432,7 +4432,7 @@
                                 "scoped": "true",
                                 "connection": "google"
                             },
-                            "label": "My Google connection (armando.maynez@gmail.com)"
+                            "label": "My Google connection"
                         }
                     }
                 },
