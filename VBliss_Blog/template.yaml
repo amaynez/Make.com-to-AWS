@@ -15,6 +15,7 @@ Resources:
         GenerateTableOfContentsArn: !GetAtt GenerateTableOfContents.Arn
         ProcessSectionLambdaArn: !GetAtt ProcessSectionLambda.Arn
         ConcatenateResultsLambdaArn: !GetAtt ConcatenateResultsLambda.Arn
+        GenerateSummaryArn: !GetAtt GenerateSummary.Arn
       Events:
         BlogPostingSchedule:
           Type: Schedule # More info about Schedule Event Source: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-statemachine-schedule.html
@@ -31,6 +32,9 @@ Resources:
             FunctionName: !Ref ProcessSectionLambda
         - LambdaInvokePolicy:
             FunctionName: !Ref ConcatenateResultsLambda
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateSummary
+
 
   ReadGoogleSheetsCell:
     Type: AWS::Serverless::Function
@@ -39,17 +43,27 @@ Resources:
       Handler: read_google_sheets_cell.lambda_handler
       Runtime: python3.12
       Timeout: 900
-      MemorySize: 1024  # Increase this value (in MB) 
+      MemorySize: 1024  # Increase this value (in MB) as required
       Environment:
         Variables:
-          GOOGLE_APPLICATION_CREDENTIALS: 'clientLibraryConfig-aws-lstbgacc.json'
-          SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M'
-          RANGE_NAME: 'WebFlow!A1:M9999'
-          SECRET_NAME: 'GoogleJSONCredentials'
-          REGION_NAME: 'us-west-2'
+          SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M' # Put your Google Sheets ID here
+          RANGE_NAME: 'WebFlow!A1:M9999' # put the range you wish to use from Google Sheets here
+          SECRET_NAME: 'GoogleJSONCredentials' # Modify with the name of the AWS Secret you used to store your Google Credentials
+          REGION_NAME: 'us-west-2' # this is the region you have your secret stored at for the google credentials
       Policies:
         - AWSLambdaBasicExecutionRole
-  
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'secretsmanager:GetSecretValue'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 'kms:Decrypt'
+                - 'kms:DescribeKey'
+              Resource: '*'
+
   GenerateTableOfContents:
     Type: AWS::Serverless::Function
     Properties:
@@ -73,7 +87,7 @@ Resources:
             - Effect: Allow
               Action:
                 - 'bedrock:InvokeModel'
-              Resource: 'arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-3-opus-20240229-v1:0'
+              Resource: '*'
 
   ProcessSectionLambda:
     Type: AWS::Serverless::Function
@@ -110,6 +124,31 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Policies:
         - AWSLambdaBasicExecutionRole
+
+  GenerateSummary:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/GenerateSummary
+      Handler: Generate_Summary.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0'
+          BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+          BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
+          BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
+          SYSTEM_PROMPT: 'Eres un generador de resumenes, únicamente generas el resumen que el usuario te pide sin contexto ni explicaciones adicionales. Nunca agregas texto enunciando lo que vas a responder.'
+          USER_PROMPT: 'Genera un resumen corto del siguiente post de blog #####: $$$$$. Asegúrate de usar la siguiente frase clave en el texto: !!!!!'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'bedrock:InvokeModel'
+              Resource: '*'
 
 #   StockCheckerFunction:
 #     Type: AWS::Serverless::Function # More info about Function Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html

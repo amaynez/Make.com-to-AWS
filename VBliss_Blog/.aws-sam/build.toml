@@ -40,4 +40,14 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["ConcatenateResultsLambda"]
 
+[function_build_definitions.35fdf12f-8e31-4735-b50b-13a5381578c1]
+codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/functions/GenerateSummary"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "Generate_Summary.lambda_handler"
+source_hash = "e3fef84100078b9edf7222192e5344a01b75e07f39c686038b8893a3bd0ad484"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GenerateSummary"]
+
 [layer_build_definitions]

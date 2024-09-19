@@ -64,6 +64,29 @@
         "Type": "Task",
         "Resource": "${ConcatenateResultsLambdaArn}",
         "InputPath": "$.processedSections",
+        "ResultPath": "$.blogPost",
+        "Next": "GenerateSummary"
+      },
+      "GenerateSummary": {
+        "Type": "Task",
+        "Resource": "${GenerateSummaryArn}",
+        "Parameters": {
+          "Payload": {
+            "blogPost.$": "$.blogPost",
+            "metaOut.$": "$.metaOut"
+          }
+        },
+        "ResultPath": "$.SummaryOut",
+        "Retry": [
+            {
+              "ErrorEquals": [
+                "States.TaskFailed"
+              ],
+              "IntervalSeconds": 15,
+              "MaxAttempts": 5,
+              "BackoffRate": 1.5
+            }
+          ],
         "End": true
       }
     }
