@@ -154,8 +154,8 @@ Resources:
           BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
           BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
           BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
-          SYSTEM_PROMPT: 'Eres un generador de resumenes, únicamente generas el resumen que el usuario te pide sin contexto ni explicaciones adicionales. Nunca agregas texto enunciando lo que vas a responder.'
-          USER_PROMPT: 'Genera un resumen corto del siguiente post de blog #####: $$$$$. Asegúrate de usar la siguiente frase clave en el texto: !!!!!'
+          SYSTEM_PROMPT: 'Eres un generador de extractos, únicamente generas el extracto que el usuario te pide sin contexto ni explicaciones adicionales. Nunca agregas texto enunciando lo que vas a responder.'
+          USER_PROMPT: 'Genera un extracto corto del siguiente post de blog #####: $$$$$. Asegúrate de usar la siguiente frase clave en el texto: !!!!!'
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17' 

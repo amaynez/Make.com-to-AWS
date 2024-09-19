@@ -10,7 +10,7 @@ The scenario works as follows:
 
 0. It assumes I have a Google Sheet prefilled with blog post titles (I used a different scenario to fill this sheet with titles)
 1. It logs into Google Sheets and retrieves the first blog title that has not been posted
-2. Then it creates a table of contents in JSON using Claude Opus
+2. Then it creates a table of contents in JSON using Claude Opus (I was already using AWS Bedrock API for this)
 3. It separates the table of contents by top level items
 4. It generates the blog post section for each of the top level items
 5. It concatenates all the blog post sections into a single large blog post

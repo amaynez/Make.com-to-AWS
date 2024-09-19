@@ -45,10 +45,12 @@ def lambda_handler(event, context):
     # WordPress API endpoint
     wp_api_url = os.environ['API_URL']
     
-    # WordPress credentials
-    wp_secret = get_secret(os.environ['SECRET'], os.environ['REGION'])
+    # Retrieve Wordpress Credentials
+    wp_secret_str = get_secret(os.environ['SECRET'], os.environ['REGION'])
+    wp_secret = json.loads(wp_secret_str)
     wp_username = wp_secret.get('username')
     wp_password = wp_secret.get('password')
+
     
     # Prepare the post data
     post_data = {
