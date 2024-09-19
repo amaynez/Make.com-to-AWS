@@ -18,7 +18,8 @@ def lambda_handler(event, context):
     title = body_content_meta.get('title')
     keywords = body_content_meta.get('keywords')
     
-    blog_body = json.loads(blog_post.get('body', '{}'))
+    blog_body = blog_post.get('body', '')
+    blog_body = blog_body.strip()
 
     # Get the system prompt from the event (if provided)
     system_prompt = os.environ['SYSTEM_PROMPT']
