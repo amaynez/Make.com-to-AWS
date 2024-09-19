@@ -81,7 +81,7 @@
                                 "scoped": "true",
                                 "connection": "google"
                             },
-                            "label": "My Google connection (armando.maynez@gmail.com)"
+                            "label": "My Google connection"
                         }
                     }
                 },
@@ -835,7 +835,7 @@
                 "variables": [
                     {
                         "name": "api_url",
-                        "value": "http://Bedroc-Proxy-AIG0trvtM7yT-1581992170.us-west-2.elb.amazonaws.com/api/v1/chat/completions"
+                        "value": "your API URL HERE or change for OpenAI or Anthropic Tasks"
                     }
                 ]
             },
@@ -1010,7 +1010,7 @@
                 "headers": [
                     {
                         "name": "Authorization",
-                        "value": "Bearer BedrockAWSOpenAI"
+                        "value": "Bearer yourAPIKey"
                     },
                     {
                         "name": "Content-Type",
@@ -1821,7 +1821,7 @@
                 "headers": [
                     {
                         "name": "Authorization",
-                        "value": "Bearer BedrockAWSOpenAI"
+                        "value": "Bearer yourAPIKey"
                     },
                     {
                         "name": "Content-Type",
@@ -2322,7 +2322,7 @@
                 "headers": [
                     {
                         "name": "Authorization",
-                        "value": "Bearer BedrockAWSOpenAI"
+                        "value": "Bearer yourAPIKey"
                     },
                     {
                         "name": "Content-Type",
@@ -2771,7 +2771,7 @@
                 "headers": [
                     {
                         "name": "Authorization",
-                        "value": "Bearer BedrockAWSOpenAI"
+                        "value": "Bearer yourAPIKey"
                     },
                     {
                         "name": "Content-Type",
@@ -3152,7 +3152,7 @@
                 "headers": [
                     {
                         "name": "Authorization",
-                        "value": "Bearer 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"
+                        "value": "Bearer yourAPIKey"
                     }
                 ],
                 "timeout": "",
