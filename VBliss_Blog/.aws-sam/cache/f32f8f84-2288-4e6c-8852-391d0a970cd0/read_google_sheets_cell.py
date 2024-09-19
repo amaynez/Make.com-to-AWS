@@ -62,7 +62,8 @@ def lambda_handler(event, context):
                 result = {
                      "title": row[1],
                      "keywords": row[7],
-                     "category_id": row[9]
+                     "category_id": row[9],
+                     "row_number": i + 1
                 }
                 response = {
                     'statusCode': 200,

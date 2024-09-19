@@ -1,14 +1,24 @@
 # Make.com-to-AWS
 
-This is an experiment to try to recreate a complex [Make.com](https://make.com) scenario using AWS Step Functions
+[Original Reddit Post](https://www.reddit.com/r/Integromat/comments/1fh5qzv/user_of_makecom_started_to_migrate_scenarios_to/)
 
-I have a business and this business has a blog, I got the idea of using LLMs to write SEO relevant blog posts. I discovered [Make.com](https://make.com) and in no time I was fully automated. I purchased the 10,000 operations a month plan, and it always runs out by day 20 of the month, because I also have other automations like creating LinkedIn posts on my personal page, doing some sync on some database backups between airtable, notion and Google sheets, and some deduplications. It is a fantastic tool, and I love it. Specially because I can do quite complex things with it very quickly. I now want to increase the frequency of the blog posts scenario but that would mean that I have to purchase a larger plan, even after optimizing all my scenarios for minimal operations (for instance the blog post one originally used up 230 operations per run, and now it only uses 57). So I did the math and it turns out that using AWS Step Functions and some Lambdas I can have the same functionality but much cheaper (if you compare the spend per operation). Obviously at the great cost of taking much longer to program everything. For instance parsing JSON which is just a piece of cake in [Make.com](https://make.com), is a pain when coding it yourself. Im between jobs at the moment so I am taking this opportunity to learn how Step Functions work in AWS by recreating my Make.com scenarios. I will then run them for a month and see if it is truly cheaper or not. But in the mean time at least I spent some time sharpening my python skills and learning some cloud development which is completely new to me. This is the repo for this. I think that for use cases like mine where I don’t need to change or create scenarios constantly, but have a more stable automation landscape, it make sense to go from no-code to code. Otherwise, [Make.com](https://make.com) is brilliant to create scenarios quite quickly. Let me know if it makes sense to you.
+This is an experiment to try to recreate a complex [Make.com](https://make.com) scenario using AWS Step Functions.
+
+I have a business and this business has a blog, I got the idea of using LLMs to write SEO relevant blog posts. I discovered [Make.com](https://make.com) and in no time I was fully automated.
+
+I purchased the 10,000 operations a month plan, and it always runs out by day 20 of the month, because I also have other automations like creating LinkedIn posts on my personal page, doing some sync on some database backups between airtable, notion and Google sheets, and some deduplications. It is a fantastic tool, and I love it. Specially because I can do quite complex things with it very quickly.
+
+I now want to increase the frequency of the blog posts scenario but that would mean that I have to purchase a larger plan, even after optimizing all my scenarios for minimal operations (for instance the blog post one originally used up 230 operations per run, and now it only uses 57).
+
+So I did the math and it turns out that using AWS Step Functions and some Lambdas I can have the same functionality but much cheaper (if you compare the spend per operation). Obviously at the great cost of taking much longer to program everything. For instance parsing JSON which is just a piece of cake in [Make.com](https://make.com), is a pain when coding it yourself.
+
+Im between jobs at the moment so I am taking this opportunity to learn how Step Functions work in AWS by recreating my Make.com scenarios. **I will then run them for a month and see if it is truly cheaper or not.** But in the mean time at least I spent some time sharpening my python skills and learning some cloud development which is completely new to me.
+
+This is the repo for this project. I think that for use cases like mine where I don’t need to change or create scenarios constantly, but have a more or less stable automation landscape, it make sense to go from no-code to code. Otherwise, [Make.com](https://make.com) is brilliant to create scenarios quite quickly. Let me know if it makes sense to you.
 
 The scenarios I redid as applications are:
 
 1. [VBliss Blog](https://github.com/amaynez/Make.com-to-AWS/tree/main/VBliss_Blog)
-
-[Original Reddit Post](https://www.reddit.com/r/Integromat/comments/1fh5qzv/user_of_makecom_started_to_migrate_scenarios_to/)
 
 ## How to use
 
@@ -42,8 +52,14 @@ Here are the steps to create a local development environment in VS Code on a Mac
 
 ## 1. Install Prerequisites
 
-[Python 3 installed](https://www.python.org/downloads/)
+- [Create AWS Secrets as needed for your API Credentials](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html) Remember to modify the template.yaml file with the name of your secrets for all the Lambda functions who need it.
+
+- [Python 3 installed](https://www.python.org/downloads/)
+
+- [Install Docker community edition](https://hub.docker.com/search/?type=edition&offering=community)
+
 <details>
+
 <summary>Install AWS CLI:</summary>
 
 <details>
@@ -155,8 +171,9 @@ This will list all S3 buckets in your account if configured correctly.
 By following these steps, you should have AWS CLI installed and configured on your Windows, macOS, or Linux system. Remember to keep your AWS CLI updated for the latest features and security improvements.
 
 </details>
-[Install Docker community edition](https://hub.docker.com/search/?type=edition&offering=community)
+
 <details>
+
 <summary> Install SAM CLI </summary>
 Here's a step-by-step guide on how to install AWS SAM CLI on Windows, macOS, and Linux:
 
@@ -326,7 +343,7 @@ You can find more information and examples about filtering Lambda function logs 
 
 ### Add resources to your application
 
-The application template uses AWS Serverless Application Model (AWS SAM) to define application resources. AWS SAM is an extension of AWS CloudFormation with a simpler syntax for configuring common serverless application resources such as functions, triggers, and APIs. For resources not included in [the SAM specification](https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md), you can use standard [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html) resource types.
+These applications use AWS Serverless Application Model (AWS SAM) to define application resources. AWS SAM is an extension of AWS CloudFormation with a simpler syntax for configuring common serverless application resources such as functions, triggers, and APIs. For resources not included in [the SAM specification](https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md), you can use standard [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html) resource types.
 
 ### Build your Docker image
 

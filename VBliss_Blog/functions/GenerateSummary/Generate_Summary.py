@@ -74,13 +74,9 @@ def lambda_handler(event, context):
             # Log the response text for debugging
             print(f"LLM Out: {response_text}")
 
-            output = {
-                "summary": response_text
-            }
-
             return {
                 'statusCode': 200,
-                'body': json.dumps(output),
+                'body': json.dumps(response_text),
                 'headers': {
                     'Content-Type': 'application/json'
                 }

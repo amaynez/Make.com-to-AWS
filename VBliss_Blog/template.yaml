@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   VBliss-Blog
 
-  Sample SAM Template for VBliss-Blog
+  SAM Template for VBliss-Blog automation
 
 Resources:
   VBlissBlogStateMachine:
@@ -16,6 +16,11 @@ Resources:
         ProcessSectionLambdaArn: !GetAtt ProcessSectionLambda.Arn
         ConcatenateResultsLambdaArn: !GetAtt ConcatenateResultsLambda.Arn
         GenerateSummaryArn: !GetAtt GenerateSummary.Arn
+        GenerateFluxPromptArn: !GetAtt GenerateFluxPrompt.Arn
+        GenerateFluxImageArn: !GetAtt GenerateFluxImage.Arn
+        PostImageWordpressArn: !GetAtt PostImageWordpress.Arn
+        PostWordpressArn: !GetAtt PostWordpress.Arn
+        WriteBackGoogleSheetsArn: !GetAtt WriteBackGoogleSheets.Arn
       Events:
         BlogPostingSchedule:
           Type: Schedule # More info about Schedule Event Source: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-statemachine-schedule.html
@@ -34,6 +39,16 @@ Resources:
             FunctionName: !Ref ConcatenateResultsLambda
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateSummary
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateFluxPrompt
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GenerateFluxImage
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PostImageWordpress
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PostWordpress
+        - LambdaInvokePolicy:
+            FunctionName: !Ref WriteBackGoogleSheets
 
 
   ReadGoogleSheetsCell:
@@ -74,7 +89,7 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Environment:
         Variables:
-          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0'
+          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0' # Several models are tried to avoid "An error occurred (ThrottlingException) when calling the InvokeModel operation (reached max retries: 4): Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again."
           BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
           BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
           BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
@@ -99,7 +114,7 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Environment:
         Variables:
-          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0'
+          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0' # Several models are tried to avoid "An error occurred (ThrottlingException) when calling the InvokeModel operation (reached max retries: 4): Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again."
           BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
           BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
           BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
@@ -135,7 +150,7 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Environment:
         Variables:
-          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0'
+          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0' # Several models are tried to avoid "An error occurred (ThrottlingException) when calling the InvokeModel operation (reached max retries: 4): Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again."
           BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
           BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
           BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
@@ -150,47 +165,148 @@ Resources:
                 - 'bedrock:InvokeModel'
               Resource: '*'
 
-#   StockCheckerFunction:
-#     Type: AWS::Serverless::Function # More info about Function Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
-#     Properties:
-#       CodeUri: functions/stock_checker/
-#       Handler: app.lambda_handler
-#       Runtime: python3.12
-#       Architectures:
-#         - x86_64
+  GenerateFluxPrompt:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/GenerateFluxPrompt
+      Handler: Generate_Flux_Prompt.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID_1: 'anthropic.claude-3-opus-20240229-v1:0' # Several models are tried to avoid "An error occurred (ThrottlingException) when calling the InvokeModel operation (reached max retries: 4): Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again."
+          BEDROCK_MODEL_ID_2: 'anthropic.claude-3-5-sonnet-20240620-v1:0'
+          BEDROCK_MODEL_ID_3: 'anthropic.claude-3-sonnet-20240229-v1:0'
+          BEDROCK_MODEL_ID_4: 'anthropic.claude-3-haiku-20240307-v1:0'
+          SYSTEM_PROMPT: 'You are an expert prompt engineer specialized in prompts for image generation using Black Forest Flux difussion models. You will generate the text of the prompt requested by user and never give any context or additional explanations. You never add text announcing what you will respond nor generate any summary of what you did.'
+          USER_PROMPT: 'Generate a prompt in english for stable diffussion models based on: #####; $$$$$'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'bedrock:InvokeModel'
+              Resource: '*'
 
-#   StockSellerFunction:
-#     Type: AWS::Serverless::Function
-#     Properties:
-#       CodeUri: functions/stock_seller/
-#       Handler: app.lambda_handler
-#       Runtime: python3.12
-#       Architectures:
-#         - x86_64
+  GenerateFluxImage:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/GenerateFluxImage
+      Handler: Generate_Flux_Image.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          SECRET: 'HuggingFaceAPISecret'
+          REGION: 'us-west-2'
+          S3_BUCKET_NAME: 'vbliss-blog-img'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'secretsmanager:GetSecretValue'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 'kms:Decrypt'
+                - 'kms:DescribeKey'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 's3:PutObject'
+              Resource: 'arn:aws:s3:::vbliss-blog-img/*'
 
-#   StockBuyerFunction:
-#     Type: AWS::Serverless::Function
-#     Properties:
-#       CodeUri: functions/stock_buyer/
-#       Handler: app.lambda_handler
-#       Runtime: python3.12
-#       Architectures:
-#         - x86_64
+  PostImageWordpress:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/PostImageWordpress
+      Handler: Post_Image_Wordpress.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          API_URL: 'https://vbliss.com.mx/wp-json/wp/v2/media'
+          SECRET: 'WordpressCredentials'
+          REGION: 'us-west-2'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'secretsmanager:GetSecretValue'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 'kms:Decrypt'
+                - 'kms:DescribeKey'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 's3:GetObject'
+              Resource: 'arn:aws:s3:::vbliss-blog-img/*'
 
-#   TransactionTable:
-#     Type: AWS::Serverless::SimpleTable # More info about SimpleTable Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-simpletable.html
-#     Properties:
-#       PrimaryKey:
-#         Name: Id
-#         Type: String
-#       ProvisionedThroughput:
-#         ReadCapacityUnits: 1
-#         WriteCapacityUnits: 1
+  PostWordpress:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/PostWordpress
+      Handler: Post_Wordpress.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) 
+      Environment:
+        Variables:
+          API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/231532346/posts/new'
+          SECRET: 'WordpressCredentials'
+          REGION: 'us-west-2'
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'secretsmanager:GetSecretValue'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 'kms:Decrypt'
+                - 'kms:DescribeKey'
+              Resource: '*'
+
+  WriteBackGoogleSheets:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./functions/WriteBackGoogleSheets
+      Handler: Write_Back_Google_Sheets.lambda_handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 1024  # Increase this value (in MB) as required
+      Environment:
+        Variables:
+          SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M' # Put your Google Sheets ID here
+          SECRET: 'GoogleJSONCredentials' # Modify with the name of the AWS Secret you used to store your Google Credentials
+          REGION: 'us-west-2' # this is the region you have your secret stored at for the google credentials
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'secretsmanager:GetSecretValue'
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - 'kms:Decrypt'
+                - 'kms:DescribeKey'
+              Resource: '*'
 
 Outputs:
-  # StockTradingStateMachineHourlyTradingSchedule is an implicit Schedule event rule created out of Events key under Serverless::StateMachine
-  # Find out more about other implicit resources you can reference within SAM
-  # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-generated-resources.html
   VBlissBlogStateMachineArn:
     Description: "VBliss Log State machine ARN"
     Value: !Ref VBlissBlogStateMachine

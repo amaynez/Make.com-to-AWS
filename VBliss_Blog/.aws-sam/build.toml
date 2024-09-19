@@ -5,7 +5,7 @@ codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/function
 runtime = "python3.12"
 architecture = "x86_64"
 handler = "read_google_sheets_cell.lambda_handler"
-source_hash = "9e6eb8d60323c860ae3b59b260656b598a07b41f20b3edaaabcc89f4b189d13c"
+source_hash = "7a557162bc37dce09c69bbd14f4e0e57c2d12fab0c985a897909638d525566e4"
 manifest_hash = "f06fd98288197e372d4db62323e1cf82"
 packagetype = "Zip"
 functions = ["ReadGoogleSheetsCell"]
@@ -45,9 +45,59 @@ codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/function
 runtime = "python3.12"
 architecture = "x86_64"
 handler = "Generate_Summary.lambda_handler"
-source_hash = "51b57196212bbc92055dc9aab3530208304676df93c64a83229ec4bbd32a79d3"
+source_hash = "705417aa10f6cbf258542ac04fa663cb262a88a086775f4a392e5342d6dfb294"
 manifest_hash = ""
 packagetype = "Zip"
 functions = ["GenerateSummary"]
+
+[function_build_definitions.fab8c324-c404-43b2-aae5-8237c95c1b1f]
+codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/functions/GenerateFluxPrompt"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "Generate_Flux_Prompt.lambda_handler"
+source_hash = "eb1305a17e0510bb606b4622d758a1b586fc5671cc5b3314773212a0f3c11b2d"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GenerateFluxPrompt"]
+
+[function_build_definitions.1eaf0d36-7f40-43de-9f27-595c1edd8781]
+codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/functions/GenerateFluxImage"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "Generate_Flux_Image.lambda_handler"
+source_hash = "bccf57ba23db748d6f03b77d423f70297ea62ce944632ec374201963c8bb4dd7"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GenerateFluxImage"]
+
+[function_build_definitions.ea63414a-0392-4f6b-9dad-bdc5901bc102]
+codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/functions/PostImageWordpress"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "Post_Image_Wordpress.lambda_handler"
+source_hash = "c596046816c517111ec158e8e3f759261e563b96fa52511d558b93fa513b02c3"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["PostImageWordpress"]
+
+[function_build_definitions.a732fd63-7385-41f2-86c2-de13cc153716]
+codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/functions/PostWordpress"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "Post_Wordpress.lambda_handler"
+source_hash = "1e356df7faf6f8e94ceff1556e082965b65723889904818af0d30e30d94cb298"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["PostWordpress"]
+
+[function_build_definitions.1274c5ac-a034-48de-aba6-9cc6e87f2f92]
+codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/functions/WriteBackGoogleSheets"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "Write_Back_Google_Sheets.lambda_handler"
+source_hash = "659a80ea67951d69e3bc00e30ab72b896cc52b06a4e6545401856bce0adf2ee2"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["WriteBackGoogleSheets"]
 
 [layer_build_definitions]
