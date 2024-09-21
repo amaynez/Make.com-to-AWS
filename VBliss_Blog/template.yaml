@@ -313,7 +313,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./functions/EmptyBucket
-      Handler: EmptyBucket.lambda_handler
+      Handler: Empty_Bucket.lambda_handler
       Runtime: python3.12
       Timeout: 900
       MemorySize: 1024  # Increase this value (in MB) 
@@ -328,7 +328,9 @@ Resources:
               Action:
                 - 's3:ListBucket'
                 - 's3:DeleteObject'
-              Resource: 'arn:aws:s3:::vbliss-blog-img/*'
+              Resource:
+                - 'arn:aws:s3:::vbliss-blog-img'
+                - 'arn:aws:s3:::vbliss-blog-img/*'
 
 Outputs:
   VBlissBlogStateMachineArn:
