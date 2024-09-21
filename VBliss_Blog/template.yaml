@@ -226,7 +226,7 @@ Resources:
             - Effect: Allow
               Action:
                 - 's3:PutObject'
-              Resource: 'arn:aws:s3:::vbliss-blog-img/*'
+              Resource: !Sub '${TempS3Bucket.Arn}/*'
 
   PostImageWordpress:
     Type: AWS::Serverless::Function
@@ -257,7 +257,7 @@ Resources:
             - Effect: Allow
               Action:
                 - 's3:GetObject'
-              Resource: 'arn:aws:s3:::vbliss-blog-img/*'
+              Resource: !Sub '${TempS3Bucket.Arn}/*'
 
   PostWordpress:
     Type: AWS::Serverless::Function
@@ -333,13 +333,16 @@ Resources:
                 - 's3:ListBucket'
                 - 's3:DeleteObject'
               Resource:
-                - 'arn:aws:s3:::vbliss-blog-img'
-                - 'arn:aws:s3:::vbliss-blog-img/*'
+                - !Sub '${TempS3Bucket.Arn}'
+                - !Sub '${TempS3Bucket.Arn}/*'
 
 Outputs:
   VBlissBlogStateMachineArn:
-    Description: "VBliss Log State machine ARN"
+    Description: "VBliss Log State machine"
     Value: !Ref VBlissBlogStateMachine
   VBlissBlogStateMachineRoleArn:
     Description: "IAM Role created for VBliss Blog State machine based on the specified SAM Policy Templates"
     Value: !GetAtt VBlissBlogStateMachineRole.Arn
+  VBlissBlogS3Bucket:
+    Description: "VBliss Blog Temporary S3 bucket for Images"
+    Value: !GetAtt TempS3Bucket.Arn
