@@ -23,7 +23,7 @@ The scenario works as follows:
 
 ## The state machine created
 
-![State Machine](stepfunctions_graph.png "State Machine in AWS Step Functions")
+![State Machine](stepfunctions_graph.jpg "State Machine in AWS Step Functions")
 
 It runs on a pre-defined schedule (note that the schedule is disabled by default to avoid incurring charges).
 
