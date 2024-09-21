@@ -98,7 +98,4 @@ def lambda_handler(event, context):
             'body': response.json()['URL']
         }
     else:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': 'Failed to create post', 'error': response.text})
-        }
+        raise Exception(response.text)

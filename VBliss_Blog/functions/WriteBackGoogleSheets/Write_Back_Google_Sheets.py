@@ -20,9 +20,11 @@ def get_secret(secret_name, region_name):
     except ClientError as e:
         raise e
 
+    # Return the secret string directly
     if 'SecretString' in get_secret_value_response:
         return get_secret_value_response['SecretString']
     else:
+        # In case the secret is binary
         return get_secret_value_response['SecretBinary']
 
 def parse_json_body(event, key):
@@ -102,10 +104,5 @@ def lambda_handler(event, context):
             }
         }
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)}),
-            'headers': {
-                'Content-Type': 'application/json'
-            }
-        }
+        raise Exception(f"Error updating Google Sheets: {e}")
+

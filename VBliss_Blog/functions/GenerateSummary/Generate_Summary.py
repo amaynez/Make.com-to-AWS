@@ -58,15 +58,10 @@ def lambda_handler(event, context):
                 body=json.dumps(request_body)
             )
             
-            print(f"Model Used: {model_id}")
-
             # Parse the JSON response
             response_data = json.loads(response['body'].read())
             
             response_text = response_data['content'][0]['text']
-
-            # Log the response text for debugging
-            print(f"LLM Out: {response_text}")
 
             return {
                 'statusCode': 200,
@@ -74,7 +69,8 @@ def lambda_handler(event, context):
                         'summary': response_text
                     }),
                 'headers': {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'modelUsed': model_id
                 }
             }
         except json.JSONDecodeError as json_err:
@@ -85,7 +81,4 @@ def lambda_handler(event, context):
             print(error_message)  # This will log the error in CloudWatch
 
     # If none of the models succeeded, return an error
-    return {
-        'statusCode': 500,
-        'body': json.dumps({'error': 'All models failed to generate output.'})
-    }
+    raise Exception("All models failed to generate output.")

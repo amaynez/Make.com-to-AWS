@@ -34,9 +34,6 @@ def lambda_handler(event, context):
     
     # Remove all <h1> tags and their content
     blog_post = re.sub(r'<h1>.*?</h1>', '', blog_post, flags=re.IGNORECASE | re.DOTALL)
-    
-
-    print(blog_post)
 
     return {
         'statusCode': 200,

@@ -17,8 +17,7 @@ def lambda_handler(event, context):
             if 'Contents' in page:
                 objects_to_delete = [{'Key': obj['Key']} for obj in page['Contents']]
                 s3.delete_objects(Bucket=bucket_name, Delete={'Objects': objects_to_delete})
-        
-        print(f"Successfully emptied bucket: {bucket_name}")
+
         return {
             'statusCode': 200,
             'body': f"Bucket {bucket_name} has been emptied successfully."

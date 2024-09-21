@@ -34,8 +34,6 @@ def get_image_from_s3(s3_url, region_name='us-west-2'):
     bucket_name = parsed_url.netloc.split('.')[0]
     object_key = parsed_url.path.lstrip('/')
 
-    print(f"Attempting to retrieve object from bucket: {bucket_name}, key: {object_key}")
-
     try:
         response = s3.get_object(Bucket=bucket_name, Key=object_key)
         image_content = response['Body'].read()
@@ -60,26 +58,21 @@ def lambda_handler(event, context):
     parsed_prompt_response = json.loads(json.dumps(event["FluxPromptOut"]))
     alt_text = json.loads(parsed_prompt_response.get('body', '{}'))
 
-    print(f"Alt text: {alt_text}")
-
     try:
         parsed_image_response = event.get("FluxImage", {})
         s3_image_url = parsed_image_response.get("body", "")
         filename = s3_image_url.split('/')[-1] if s3_image_url else ""
     except Exception as e:
         print(f"Error processing image url: {str(e)}")
+        raise e
 
     region = os.environ['REGION']
 
     meta_content = json.loads(event["metaOut"]["body"])
     title = meta_content.get('title')
 
-    print(f"Titulo: {title}")
-
     # Retrieve image from S3
     image_data = get_image_from_s3(s3_image_url,region)
-
-    print(f"Image data: {image_data}")
 
     # Retrieve Wordpress Credentials
     wp_secret_str = get_secret(os.environ['SECRET'], region)
@@ -102,8 +95,6 @@ def lambda_handler(event, context):
     }
 
     response = requests.post('https://public-api.wordpress.com/oauth2/token', data=data)
-    print(f"Status code: {response.status_code}")
-    print(f"Response content: {response.text}")
 
     if response.status_code == 200:
         response_json = response.json()
@@ -120,8 +111,6 @@ def lambda_handler(event, context):
     # WordPress API endpoint
     wp_api_url = os.environ['API_URL']
     wp_api_url = wp_api_url.replace("$site", str(site_id))
-
-    print(f"Wordpress API URL: {wp_api_url}")
 
     # Prepare headers
     headers = {
@@ -151,13 +140,6 @@ def lambda_handler(event, context):
         files=files,  # Use files to send the image
         data=data  # Send metadata as form data
     )
-
-    print(f"Wordpress response: {response}")
-    print(f"Wordpress response text: {response.text}")
-    print(f"Wordpress response status code: {response.status_code}")
-    print(f"Wordpress response headers: {response.headers}")
-    print(f"Wordpress response json: {response.json()}")
-    print(f"Wordpress response url: {response.url}")
 
     if response.status_code == 200:
         result=response.json()

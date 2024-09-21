@@ -54,8 +54,6 @@ def lambda_handler(event, context):
                 accept='application/json',
                 body=json.dumps(request_body)
             )
-            
-            print(f"Model Used: {model_id}")
 
             # Parse the JSON response
             response_data = json.loads(response['body'].read())
@@ -69,7 +67,8 @@ def lambda_handler(event, context):
                 'statusCode': 200,
                 'body': json.dumps(response_text),
                 'headers': {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Model-Used': model_id
                 }
             }
         except json.JSONDecodeError as json_err:
@@ -80,7 +79,4 @@ def lambda_handler(event, context):
             print(error_message)  # This will log the error in CloudWatch
 
     # If none of the models succeeded, return an error
-    return {
-        'statusCode': 500,
-        'body': json.dumps({'error': 'All models failed to generate output.'})
-    }
+    raise Exception("All models failed to generate output.")

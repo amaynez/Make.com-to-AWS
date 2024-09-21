@@ -30,11 +30,6 @@ def get_secret(secret_name, region_name):
 def lambda_handler(event, context):
     # Get the input content from the event
     flux_prompt = event.get("FluxPromptOut", {})
- 
-    if flux_prompt is None:
-        print("Error: 'FluxPromptOut' not found in the event payload")
-        raise Exception("Error: 'FluxPromptOut' not found in the event payload")
-   
     flux_prompt = flux_prompt.get('body', '')
     flux_prompt = flux_prompt.strip()
 
@@ -62,8 +57,6 @@ def lambda_handler(event, context):
 
         # Generate the S3 URL
         s3_url = f"https://{bucket_name}.s3.amazonaws.com/{filename}"
-
-        print(f"Image uploaded to S3: {s3_url}")
 
         return {
             'statusCode': 200,

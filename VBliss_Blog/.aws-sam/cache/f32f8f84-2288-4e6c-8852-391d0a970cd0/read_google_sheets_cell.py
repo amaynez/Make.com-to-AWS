@@ -26,7 +26,6 @@ def get_secret(secret_name, region_name):
         # In case the secret is binary
         return get_secret_value_response['SecretBinary']
 
-
 def lambda_handler(event, context):
     secret_name = os.environ['SECRET_NAME']
     region_name = os.environ['REGION_NAME']

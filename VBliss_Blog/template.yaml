@@ -53,6 +53,10 @@ Resources:
         - LambdaInvokePolicy:
             FunctionName: !Ref EmptyBucket
 
+  TempS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: vbliss-blog-temp
 
   ReadGoogleSheetsCell:
     Type: AWS::Serverless::Function
@@ -205,7 +209,7 @@ Resources:
         Variables:
           SECRET: 'HuggingFaceAPISecret'
           REGION: 'us-west-2'
-          S3_BUCKET_NAME: 'vbliss-blog-img'
+          S3_BUCKET_NAME: !Ref TempS3Bucket
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17' 
@@ -319,7 +323,7 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Environment:
         Variables:
-          S3_BUCKET_NAME: 'vbliss-blog-img'
+          S3_BUCKET_NAME: !Ref TempS3Bucket
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17' 

@@ -116,6 +116,7 @@
       "GenerateFluxImage": {
         "Type": "Task",
         "Resource": "${GenerateFluxImageArn}",
+        "InputPath": "$.FluxPromptOut",
         "ResultPath": "$.FluxImage",
         "Retry": [
             {
@@ -138,6 +139,11 @@
       "PostImageWordpress": {
         "Type": "Task",
         "Resource": "${PostImageWordpressArn}",
+        "Parameters": {
+          "FluxPromptOut.$": "$.FluxPromptOut",
+          "FluxImage.$": "$.FluxImage",
+          "metaOut.$": "$.metaOut"
+        },
         "ResultPath": "$.WordpressImage",
         "Retry": [
             {
@@ -153,6 +159,12 @@
         "Type": "Task",
         "Resource": "${PostWordpressArn}",
         "ResultPath": "$.WordpressPostURL",
+        "Parameters": {
+          "WordpressImage.$": "$.WordpressImage",
+          "blogPost.$": "$.blogPost",
+          "metaOut.$": "$.metaOut",
+          "SummaryOut.$": "$.SummaryOut"
+        },
         "Retry": [
             {
               "ErrorEquals": ["States.TaskFailed"],
@@ -166,6 +178,13 @@
       "WriteBackGoogleSheets": {
         "Type": "Task",
         "Resource": "${WriteBackGoogleSheetsArn}",
+        "Parameters": {
+          "WordpressImage.$": "$.WordpressImage",
+          "FluxPromptOut.$": "$.FluxPromptOut",
+          "metaOut.$": "$.metaOut",
+          "SummaryOut.$": "$.SummaryOut",
+          "WordpressPostURL.$": "$.WordpressPostURL"
+        },
         "ResultPath": "$.GoogleSheets",
         "Retry": [
             {
@@ -180,6 +199,7 @@
       "EmptyBucket": {
         "Type": "Task",
         "Resource": "${EmptyBucketArn}",
+        "InputPath": "$.GoogleSheets",
         "Retry": [
             {
               "ErrorEquals": ["States.TaskFailed"],

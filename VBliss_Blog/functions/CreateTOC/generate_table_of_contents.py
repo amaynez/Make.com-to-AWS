@@ -104,14 +104,12 @@ def lambda_handler(event, context):
 
             result = aggregate_tdc_items(tdc)
 
-            # Log the response text for debugging
-            print(f"Model Used: {model_id}")
-
             return {
                 'statusCode': 200,
                 'body': result,
                 'headers': {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'model used': model_id
                 }
             }
         except json.JSONDecodeError as json_err:
@@ -128,7 +126,4 @@ def lambda_handler(event, context):
             print(error_message)  # This will log the error in CloudWatch
 
     # If none of the models succeeded, return an error
-    return {
-        'statusCode': 500,
-        'body': json.dumps({'error': 'All models failed to generate output.'})
-    }
+    raise Exception("All models failed to generate output.")
