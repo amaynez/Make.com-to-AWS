@@ -26,9 +26,9 @@ Resources:
         BlogPostingSchedule:
           Type: Schedule # More info about Schedule Event Source: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-statemachine-schedule.html
           Properties:
-            Description: Schedule to write the blog post every hour
-            Enabled: True # This schedule is disabled by default to avoid incurring charges.
-            Schedule: "rate(1 hour)"
+            Description: Schedule to write the blog post every 15 minutes
+            Enabled: True # Remember to change this to False to avoid incurring charges while you debug.
+            Schedule: "rate(15 minutes)"
       Policies: # Find out more about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
         - LambdaInvokePolicy:
             FunctionName: !Ref ReadGoogleSheetsCell
