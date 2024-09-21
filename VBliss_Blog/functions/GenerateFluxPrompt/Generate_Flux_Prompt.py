@@ -4,21 +4,14 @@ import boto3
 
 def lambda_handler(event, context):
     # Get the input content from the event
-    blog_summary = event.get("Payload", {}).get("SummaryOut")
-    meta_response = event.get("Payload", {}).get("metaOut")
- 
-    if meta_response is None or blog_summary is None:
-        print("Error: 'metaOut' or 'blogSummary' not found in the event payload")
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'error': 'Missing expected section in event payload'})
-        }
+    blog_post = event.get("Payload", {}).get("SummaryOut")
+    body_content_post = json.loads(blog_post.get('body', '{}'))
+    blog_body = body_content_post.get('summary', '')
 
+    meta_response = event.get("Payload", {}).get("metaOut")
     body_content_meta = json.loads(meta_response.get('body', '{}'))
     title = body_content_meta.get('title')
     
-    blog_body = blog_summary.get('body', '')
-    blog_body = blog_body.strip()
 
     # Get the system prompt from the event (if provided)
     system_prompt = os.environ['SYSTEM_PROMPT']

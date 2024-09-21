@@ -231,7 +231,7 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Environment:
         Variables:
-          API_URL: 'https://vbliss.com.mx/wp-json/wp/v2/media'
+          API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/$site/media/new'
           SECRET: 'WordpressCredentials'
           REGION: 'us-west-2'
       Policies:
@@ -262,7 +262,7 @@ Resources:
       MemorySize: 1024  # Increase this value (in MB) 
       Environment:
         Variables:
-          API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/231532346/posts/new'
+          API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/$site/posts/new'
           SECRET: 'WordpressCredentials'
           REGION: 'us-west-2'
       Policies:

@@ -1,4 +1,5 @@
 import re
+import json
 
 def trim_before_heading(text):
     # Try to find <h1> first
@@ -17,11 +18,16 @@ def trim_before_heading(text):
 def lambda_handler(event, context):
     # The event will contain an array of all processed sections
     processed_sections = event
+    
     blog_post = ""
     
     # Concatenate all processed sections
     for section in processed_sections:
-        blog_post += trim_before_heading(section['body']) + "\n\n"
+        # Assuming each section is a dictionary with a 'body' key
+        body_content = section.get('body', '{}')
+        body_content_post = json.loads(body_content)
+        blog_section = body_content_post.get('blog_section', '')
+        blog_post += trim_before_heading(blog_section) + "\n\n"
     
     # Remove any extra newlines
     blog_post = blog_post.strip()
@@ -34,5 +40,8 @@ def lambda_handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': blog_post
+        'body': json.dumps({
+            'blog_post': blog_post
+        })
     }
+

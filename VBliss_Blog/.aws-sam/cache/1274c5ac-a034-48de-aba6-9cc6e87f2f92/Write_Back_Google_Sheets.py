@@ -25,6 +25,18 @@ def get_secret(secret_name, region_name):
     else:
         return get_secret_value_response['SecretBinary']
 
+def parse_json_body(event, key):
+    response = json.loads(json.dumps(event.get(key, {})))
+    return json.loads(response.get('body', '{}'))
+
+def get_nested_value(data, *keys, default=''):
+    for key in keys:
+        if isinstance(data, dict):
+            data = data.get(key, {})
+        else:
+            return default
+    return data if data != {} else default
+
 def lambda_handler(event, context):
     # Get environment variables
     secret_name = os.environ['SECRET']
@@ -41,23 +53,20 @@ def lambda_handler(event, context):
     # Create a Google Sheets API client
     sheets_service = build('sheets', 'v4', credentials=credentials)
 
-    # Extract the data needed from the event body
-    parsed_meta_response = json.loads(json.dumps(event["metaOut"]))  
-    meta_content = json.loads(parsed_meta_response.get('body', '{}'))
-    title = meta_content.get('title')
-    row_number = meta_content.get('row_number')
+    # Extract data from event
+    parsed_meta_content = parse_json_body(event, "metaOut")
+    parsed_summary = parse_json_body(event, "SummaryOut")
+    parsed_wpimage_response = parse_json_body(event, "WordpressImage")
+    parsed_flux_prompt = json.loads(json.dumps(event.get("FluxPromptOut", {})))
+    parsed_image_response = json.loads(json.dumps(event.get("WordpressPostURL", {})))
 
-    parsed_image_response = json.loads(json.dumps(event["SummaryOut"]))
-    excerpt = json.loads(parsed_image_response['body', '{}'])
-
-    parsed_wpimage_response = event.get("WordpressImage", {}).get("body")
-    image_url = json.loads(parsed_wpimage_response['url', '{}'])
-
-    parsed_image_response = json.loads(json.dumps(event["FluxPromptOut"]))
-    flux_prompt = json.loads(parsed_image_response['body', '{}'])
-
-    parsed_image_response = json.loads(json.dumps(event["WordpressPostURL"]))
-    post_url = json.loads(parsed_image_response['body', '{}'])
+    # Extract specific values
+    title = get_nested_value(parsed_meta_content, 'title')
+    row_number = get_nested_value(parsed_meta_content, 'row_number')
+    excerpt = get_nested_value(parsed_summary, 'summary')
+    image_url = get_nested_value(parsed_wpimage_response, 'url')
+    post_url = get_nested_value(parsed_image_response, 'body')
+    flux_prompt = get_nested_value(parsed_flux_prompt, 'body')
 
     current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

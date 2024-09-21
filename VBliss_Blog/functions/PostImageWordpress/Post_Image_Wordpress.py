@@ -56,7 +56,6 @@ def lambda_handler(event, context):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    #try:
     # Extract the data needed from the event body
     parsed_prompt_response = json.loads(json.dumps(event["FluxPromptOut"]))
     alt_text = json.loads(parsed_prompt_response.get('body', '{}'))
@@ -82,40 +81,75 @@ def lambda_handler(event, context):
 
     print(f"Image data: {image_data}")
 
-    # WordPress API endpoint
-    wp_api_url = os.environ['API_URL']
-    
-    print(f"Wordpress API URL: {wp_api_url}")
-
     # Retrieve Wordpress Credentials
     wp_secret_str = get_secret(os.environ['SECRET'], region)
     wp_secret = json.loads(wp_secret_str)
-    wp_username = wp_secret.get('username')
-    wp_password = wp_secret.get('password')
+    client_secret = wp_secret.get('client_secret')
+    client_id = wp_secret.get('client_id')
+    redirect_uri = wp_secret.get('redirect_uri')
+    site_id = wp_secret.get('site_id')
+    username = wp_secret.get('username')
+    password = wp_secret.get('password')
+
+    data = {
+        'grant_type': 'password',
+        'username': username,
+        'password': password,
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'redirect_uri': redirect_uri,
+        'blog_id': site_id
+    }
+
+    response = requests.post('https://public-api.wordpress.com/oauth2/token', data=data)
+    print(f"Status code: {response.status_code}")
+    print(f"Response content: {response.text}")
+
+    if response.status_code == 200:
+        response_json = response.json()
+        if 'access_token' in response_json:
+            token = response_json['access_token']
+        else:
+            print(f"'access_token' not found in response. Keys present: {response_json.keys()}")
+            raise KeyError("'access_token' not found in API response")
+    else:
+        print(f"Error response from API: {response.text}")
+        raise Exception(f"API request failed with status code {response.status_code}, response: {response.text}")
+
+
+    # WordPress API endpoint
+    wp_api_url = os.environ['API_URL']
+    wp_api_url = wp_api_url.replace("$site", str(site_id))
+
+    print(f"Wordpress API URL: {wp_api_url}")
 
     # Prepare headers
     headers = {
-        'Content-Disposition': f'attachment; filename={filename}',
-        'Content-Type': 'image/png'
-    }
-    
-    print(f"Headers: {headers}")
-
-    payload = {
-        'file': image_data,
-        'title': title,
-        'alt_text': alt_text,
-        'caption': 'Imagen generada por Flux AI'
+        'authorization': f'Bearer {token}'
     }
 
-    print(f"Payload: {payload}")
+    files = {
+        'media[0]': (filename, image_data, 'image/png')
+    }
+
+    data = {
+        'attrs[0]': {
+            'caption': 'Imagen generada por Flux AI',
+            'title': title,
+            'alt_text': alt_text,
+            'description': alt_text,
+            'status': 'publish',
+            'filename': filename
+        }
+    }
+
 
     # Make the API request
     response = requests.post(
         wp_api_url,
         headers=headers,
-        auth=HTTPBasicAuth(wp_username, wp_password),
-        data=payload
+        files=files,  # Use files to send the image
+        data=data  # Send metadata as form data
     )
 
     print(f"Wordpress response: {response}")
@@ -125,16 +159,17 @@ def lambda_handler(event, context):
     print(f"Wordpress response json: {response.json()}")
     print(f"Wordpress response url: {response.url}")
 
-    if response.status_code == 201:
+    if response.status_code == 200:
         result=response.json()
+        media_item = result['media'][0]
+        media_id = media_item['ID']
+        media_url = media_item['URL']
         return {
             'statusCode': 200,
             'body': json.dumps({
-                'media_id': result['id'],
-                'url': result['source_url']
+                'media_id': media_id,
+                'url': media_url
                 })
         }
     else:
         raise Exception(f"Failed to upload image: {response.text}")   
-    #except Exception as e:
-    #    raise Exception(f"Error in Lambda function: {str(e)}")
