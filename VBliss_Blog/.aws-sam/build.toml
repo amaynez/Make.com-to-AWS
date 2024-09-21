@@ -5,7 +5,7 @@ codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/function
 runtime = "python3.12"
 architecture = "x86_64"
 handler = "read_google_sheets_cell.lambda_handler"
-source_hash = "7a557162bc37dce09c69bbd14f4e0e57c2d12fab0c985a897909638d525566e4"
+source_hash = "c5ebbebde71934b4260f74dc9b25455fe2da3e020aa5a30a5761caff754c16e2"
 manifest_hash = "f06fd98288197e372d4db62323e1cf82"
 packagetype = "Zip"
 functions = ["ReadGoogleSheetsCell"]
@@ -99,5 +99,15 @@ source_hash = "edb6cef47cff0ad304c1e8683eeebf8b9eba13ce58f53177eef011234874d118"
 manifest_hash = ""
 packagetype = "Zip"
 functions = ["WriteBackGoogleSheets"]
+
+[function_build_definitions.4b72727d-b4bf-4156-9c8b-f78cae18c787]
+codeuri = "/Users/armandomaynez/Code/Repos/Lambda_Functions/VBliss_Blog/functions/EmptyBucket"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "EmptyBucket.lambda_handler"
+source_hash = "da551a31ef31e04c3cfef0f4a1fc2c917594d37b580abb7987bae8233e75ac27"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["EmptyBucket"]
 
 [layer_build_definitions]

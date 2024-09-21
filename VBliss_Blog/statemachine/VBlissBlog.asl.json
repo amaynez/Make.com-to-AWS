@@ -175,6 +175,19 @@
               "BackoffRate": 1.5
             }
           ],
+        "Next": "EmptyBucket"
+      },
+      "EmptyBucket": {
+        "Type": "Task",
+        "Resource": "${EmptyBucketArn}",
+        "Retry": [
+            {
+              "ErrorEquals": ["States.TaskFailed"],
+              "IntervalSeconds": 15,
+              "MaxAttempts": 999,
+              "BackoffRate": 1.5
+            }
+          ],
         "End": true
       }
     }

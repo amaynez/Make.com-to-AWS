@@ -53,30 +53,27 @@ def lambda_handler(event, context):
     values = result.get('values', [])
     
     if not values:
-        print('No data found.')
-        return None
+        raise Exception('No data found')
     
     # Find the first empty value in column A
     for i, row in enumerate(values):
         if row[0] == '':
-                result = {
-                     "title": row[1],
-                     "keywords": row[7],
-                     "category_id": row[9],
-                     "row_number": i + 1
-                }
-                response = {
-                    'statusCode': 200,
-                    'body': json.dumps(result),
-                    'headers': {
-                        'Content-Type': 'application/json'
+                if row[1] == '':
+                    raise Exception('No pending blog post to create')
+                else: 
+                    result = {
+                        "title": row[1],
+                        "keywords": row[7],
+                        "category_id": row[9],
+                        "row_number": i + 1
                     }
-                }
-                return response
+                    response = {
+                        'statusCode': 200,
+                        'body': json.dumps(result),
+                        'headers': {
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                    return response
     
-    response = {
-        'statusCode': 500,
-        'body': json.dumps({'error': 'No empty cell found in column A'})
-    }
-    
-    return response
+    raise Exception('No empty cell found in column A')
