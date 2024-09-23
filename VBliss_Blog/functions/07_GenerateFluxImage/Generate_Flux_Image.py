@@ -23,12 +23,32 @@ from PIL import Image
 from huggingface_hub import InferenceClient
 import io
 import uuid
-import json
+from urllib.parse import urlparse
 import hashlib
 
+def get_image_from_s3(object_key, bucket_name='vbliss-blog-img', region_name='us-west-2'):
+    # Retrieve an image from an S3 bucket.
+    s3 = boto3.client('s3', region_name=region_name)
+
+    try:
+        response = s3.get_object(Bucket=bucket_name, Key=object_key)
+        image_content = response['Body'].read()
+        return image_content
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        print(f"Error code: {error_code}")
+        print(f"Error message: {error_message}")
+        if error_code == 'NoSuchBucket':
+            raise Exception(f"The S3 bucket '{bucket_name}' does not exist in region {region_name}.")
+        elif error_code == 'NoSuchKey':
+            raise Exception(f"The object '{object_key}' does not exist in bucket '{bucket_name}'.")
+        else:
+            raise Exception(f"Error retrieving image from S3: {str(e)}")
+        
 def is_default_image(image):
     """
-    Check if the generated image is the default "robot" image.
+    Check if the generated image is one of the default images.
     
     Args:
         image (PIL.Image): The generated image to check.
@@ -38,8 +58,17 @@ def is_default_image(image):
     """
     # Calculate image hash
     image_hash = hashlib.md5(image.tobytes()).hexdigest()
+
+    default_images = ['flux_image_default_1.png']
+
     # Compare with known hash of the robot image
-    return image_hash == "replace when the robot image appears again"
+    for default_image in default_images:
+        image_data = get_image_from_s3(default_image)
+        default_image_hash = hashlib.md5(image_data).hexdigest()
+        print(f"Comparing image hash: {image_hash} with default image hash: {default_image_hash}")
+        if image_hash == default_image_hash:
+            return True
+
 
 def get_secret(secret_name, region_name):
     # Retrieve a secret from AWS Secrets Manager.

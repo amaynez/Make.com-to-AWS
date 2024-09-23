@@ -7,12 +7,25 @@
 # 3. Processes blog post sections
 # 4. Concatenates results
 # 5. Generates a summary
-# 6. Creates an image using AI
-# 7. Posts content to WordPress
-# 8. Updates Google Sheets
-# 9. Cleans up temporary storage
+# 6. Generates a prompt for image creation
+# 7. Creates an image using AI (Stable Diffusion via Hugging Face)
+# 8. Posts image to WordPress
+# 9. Posts content to WordPress
+# 10. Updates Google Sheets
+# 11. Cleans up temporary storage
 #
 # It also sets up IAM roles, S3 bucket, and schedules the state machine.
+# 
+# Key updates:
+# - Added multiple Bedrock model IDs to handle potential throttling
+# - Implemented image generation using Stable Diffusion models via Hugging Face
+# - Added separate steps for generating image prompts and posting images to WordPress
+# - Updated environment variables and secrets management for new functionalities
+# - Adjusted IAM roles and policies to accommodate new Lambda functions and permissions
+#
+# Note: The system is designed to create content about sexual wellness, 
+# using appropriate language and focusing on education, consent, and safety.
+
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >-
@@ -21,6 +34,48 @@ Description: >-
   SAM Template for VBliss-Blog automation
 
 Resources:
+  # Define a separate IAM role for the state machine
+  VBlissBlogStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StateMachineExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt ReadGoogleSheetsCell.Arn
+                  - !GetAtt GenerateTableOfContents.Arn
+                  - !GetAtt ProcessSectionLambda.Arn
+                  - !GetAtt ConcatenateResultsLambda.Arn
+                  - !GetAtt GenerateSummary.Arn
+                  - !GetAtt GenerateFluxPrompt.Arn
+                  - !GetAtt GenerateFluxImage.Arn
+                  - !GetAtt PostImageWordpress.Arn
+                  - !GetAtt PostWordpress.Arn
+                  - !GetAtt WriteBackGoogleSheets.Arn
+                  - !GetAtt EmptyBucket.Arn
+              - Effect: Allow
+                Action:
+                  - states:ListExecutions
+                  - states:StopExecution
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - states:DescribeExecution
+                  - states:StopExecution
+                Resource: '*'
+ 
   # State Machine Definition
   VBlissBlogStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -39,37 +94,14 @@ Resources:
         PostWordpressArn: !GetAtt PostWordpress.Arn
         WriteBackGoogleSheetsArn: !GetAtt WriteBackGoogleSheets.Arn
         EmptyBucketArn: !GetAtt EmptyBucket.Arn
+      Role: !GetAtt VBlissBlogStateMachineRole.Arn
       Events:
         BlogPostingSchedule:
           Type: Schedule
           Properties:
             Description: Schedule to write the blog post every 30 minutes
-            Enabled: True # Set to False for debugging to avoid unnecessary charges
+            Enabled: False # Set to False for debugging to avoid unnecessary charges
             Schedule: "rate(30 minutes)"
-      Policies:
-        # Policies to allow the state machine to invoke Lambda functions
-        - LambdaInvokePolicy:
-            FunctionName: !Ref ReadGoogleSheetsCell
-        - LambdaInvokePolicy:
-            FunctionName: !Ref GenerateTableOfContents
-        - LambdaInvokePolicy:
-            FunctionName: !Ref ProcessSectionLambda
-        - LambdaInvokePolicy:
-            FunctionName: !Ref ConcatenateResultsLambda
-        - LambdaInvokePolicy:
-            FunctionName: !Ref GenerateSummary
-        - LambdaInvokePolicy:
-            FunctionName: !Ref GenerateFluxPrompt
-        - LambdaInvokePolicy:
-            FunctionName: !Ref GenerateFluxImage
-        - LambdaInvokePolicy:
-            FunctionName: !Ref PostImageWordpress
-        - LambdaInvokePolicy:
-            FunctionName: !Ref PostWordpress
-        - LambdaInvokePolicy:
-            FunctionName: !Ref WriteBackGoogleSheets
-        - LambdaInvokePolicy:
-            FunctionName: !Ref EmptyBucket
 
   # S3 Bucket for temporary storage of generated images
   TempS3Bucket:
@@ -234,7 +266,8 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref TempS3Bucket
-          ENDPOINT_NAME: 'XXXXX'
+          SECRET: 'HuggingFaceAPISecret'
+          REGION: 'us-west-2'
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17' 
@@ -252,6 +285,10 @@ Resources:
               Action:
                 - 's3:PutObject'
               Resource: !Sub '${TempS3Bucket.Arn}/*'
+            - Effect: Allow
+              Action:
+                - 's3:GetObject'
+              Resource: '*'
 
   PostImageWordpress:
     Type: AWS::Serverless::Function

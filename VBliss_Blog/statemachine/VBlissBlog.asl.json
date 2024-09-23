@@ -1,214 +1,214 @@
 {
-    "Comment": "A state machine that writes blog posts for VBliss.",
-    "StartAt": "Get Google Sheet Value",
-    "States": {
-      "Get Google Sheet Value": {
-        "Type": "Task",
-        "Resource": "${ReadGoogleSheetsCellArn}",
-        "ResultPath": "$.metaOut",
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-        ],
-        "Next": "GenerateTableOfContents"
+  "Comment": "A state machine that writes blog posts for VBliss.",
+  "StartAt": "Get Google Sheet Value",
+  "States": {
+    "Get Google Sheet Value": {
+      "Type": "Task",
+      "Resource": "${ReadGoogleSheetsCellArn}",
+      "ResultPath": "$.metaOut",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "GenerateTableOfContents"
+    },
+    "GenerateTableOfContents": {
+      "Type": "Task",
+      "Resource": "${GenerateTableOfContentsArn}",
+      "ResultPath": "$.ToCOut",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "ProcessSections"
+    },
+    "ProcessSections": {
+      "Type": "Map",
+      "ItemsPath": "$.ToCOut.body",
+      "Parameters": {
+        "item.$": "$$.Map.Item.Value",
+        "metaOut.$": "$.metaOut"
       },
-      "GenerateTableOfContents": {
-        "Type": "Task",
-        "Resource": "${GenerateTableOfContentsArn}",
-        "ResultPath": "$.ToCOut",
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-          ],
-        "Next": "ProcessSections"
-      },
-      "ProcessSections": {
-        "Type": "Map",
-        "ItemsPath": "$.ToCOut.body",
-        "Parameters": {
-            "item.$": "$$.Map.Item.Value",
-            "metaOut.$": "$.metaOut"
+      "MaxConcurrency": 0,
+      "Iterator": {
+        "StartAt": "WaitTime",
+        "States": {
+          "WaitTime": {
+            "Type": "Wait",
+            "Seconds": 1,
+            "Next": "ProcessSection"
           },
-        "MaxConcurrency": 1,
-        "Iterator": {
-          "StartAt": "WaitTime",
-          "States": {
-            "WaitTime": {
-              "Type": "Wait",
-              "Seconds": 61,
-              "Next": "ProcessSection"
-            },
-            "ProcessSection": {
-                "Type": "Task",
-                "Resource": "${ProcessSectionLambdaArn}",
-                "End": true
-              }
+          "ProcessSection": {
+            "Type": "Task",
+            "Resource": "${ProcessSectionLambdaArn}",
+            "End": true
           }
-        },
-        "ResultPath": "$.processedSections",
-        "Next": "ConcatenateResults"
+        }
       },
-      "ConcatenateResults": {
-        "Type": "Task",
-        "Resource": "${ConcatenateResultsLambdaArn}",
-        "InputPath": "$.processedSections",
-        "ResultPath": "$.blogPost",
-        "Next": "WaitTime2"
-      },
-      "WaitTime2": {
-        "Type": "Wait",
-        "Seconds": 61,
-        "Next": "GenerateSummary"
-      },
-      "GenerateSummary": {
-        "Type": "Task",
-        "Resource": "${GenerateSummaryArn}",
-        "Parameters": {
-          "Payload": {
-            "blogPost.$": "$.blogPost",
-            "metaOut.$": "$.metaOut"
-          }
-        },
-        "ResultPath": "$.SummaryOut",
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-          ],
-        "Next": "WaitTime3"
-      },
-      "WaitTime3": {
-        "Type": "Wait",
-        "Seconds": 61,
-        "Next": "GenerateFluxPrompt"
-      },
-      "GenerateFluxPrompt": {
-        "Type": "Task",
-        "Resource": "${GenerateFluxPromptArn}",
-        "Parameters": {
-          "Payload": {
-            "SummaryOut.$": "$.SummaryOut",
-            "metaOut.$": "$.metaOut"
-          }
-        },
-        "ResultPath": "$.FluxPromptOut",
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-          ],
-        "Next": "GenerateFluxImage"
-      },
-      "GenerateFluxImage": {
-        "Type": "Task",
-        "Resource": "${GenerateFluxImageArn}",
-        "InputPath": "$.FluxPromptOut",
-        "ResultPath": "$.FluxImage",
-        "Retry": [
-            {
-              "ErrorEquals": [
-                "APIError"
-              ],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 2.0
-            },
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-          ],
-        "Next": "PostImageWordpress"
-      },
-      "PostImageWordpress": {
-        "Type": "Task",
-        "Resource": "${PostImageWordpressArn}",
-        "Parameters": {
-          "FluxPromptOut.$": "$.FluxPromptOut",
-          "FluxImage.$": "$.FluxImage",
-          "metaOut.$": "$.metaOut"
-        },
-        "ResultPath": "$.WordpressImage",
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-          ],
-        "Next": "PostWordpress"
-      },
-      "PostWordpress": {
-        "Type": "Task",
-        "Resource": "${PostWordpressArn}",
-        "ResultPath": "$.WordpressPostURL",
-        "Parameters": {
-          "WordpressImage.$": "$.WordpressImage",
+      "ResultPath": "$.processedSections",
+      "Next": "ConcatenateResults"
+    },
+    "ConcatenateResults": {
+      "Type": "Task",
+      "Resource": "${ConcatenateResultsLambdaArn}",
+      "InputPath": "$.processedSections",
+      "ResultPath": "$.blogPost",
+      "Next": "WaitTime2"
+    },
+    "WaitTime2": {
+      "Type": "Wait",
+      "Seconds": 1,
+      "Next": "GenerateSummary"
+    },
+    "GenerateSummary": {
+      "Type": "Task",
+      "Resource": "${GenerateSummaryArn}",
+      "Parameters": {
+        "Payload": {
           "blogPost.$": "$.blogPost",
-          "metaOut.$": "$.metaOut",
-          "SummaryOut.$": "$.SummaryOut"
-        },
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-          ],
-        "Next": "WriteBackGoogleSheets"
+          "metaOut.$": "$.metaOut"
+        }
       },
-      "WriteBackGoogleSheets": {
-        "Type": "Task",
-        "Resource": "${WriteBackGoogleSheetsArn}",
-        "Parameters": {
-          "WordpressImage.$": "$.WordpressImage",
-          "FluxPromptOut.$": "$.FluxPromptOut",
-          "metaOut.$": "$.metaOut",
+      "ResultPath": "$.SummaryOut",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "WaitTime3"
+    },
+    "WaitTime3": {
+      "Type": "Wait",
+      "Seconds": 1,
+      "Next": "GenerateFluxPrompt"
+    },
+    "GenerateFluxPrompt": {
+      "Type": "Task",
+      "Resource": "${GenerateFluxPromptArn}",
+      "Parameters": {
+        "Payload": {
           "SummaryOut.$": "$.SummaryOut",
-          "WordpressPostURL.$": "$.WordpressPostURL"
-        },
-        "ResultPath": "$.GoogleSheets",
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 60,
-              "MaxAttempts": 99,
-              "BackoffRate": 1.5
-            }
-          ],
-        "Next": "EmptyBucket"
+          "metaOut.$": "$.metaOut"
+        }
       },
-      "EmptyBucket": {
-        "Type": "Task",
-        "Resource": "${EmptyBucketArn}",
-        "InputPath": "$.GoogleSheets",
-        "Retry": [
-            {
-              "ErrorEquals": ["States.TaskFailed"],
-              "IntervalSeconds": 15,
-              "MaxAttempts": 999,
-              "BackoffRate": 1.5
-            }
+      "ResultPath": "$.FluxPromptOut",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "GenerateFluxImage"
+    },
+    "GenerateFluxImage": {
+      "Type": "Task",
+      "Resource": "${GenerateFluxImageArn}",
+      "InputPath": "$.FluxPromptOut",
+      "ResultPath": "$.FluxImage",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "APIError"
           ],
-        "End": true
-      }
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 2.0
+        },
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "PostImageWordpress"
+    },
+    "PostImageWordpress": {
+      "Type": "Task",
+      "Resource": "${PostImageWordpressArn}",
+      "Parameters": {
+        "FluxPromptOut.$": "$.FluxPromptOut",
+        "FluxImage.$": "$.FluxImage",
+        "metaOut.$": "$.metaOut"
+      },
+      "ResultPath": "$.WordpressImage",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "PostWordpress"
+    },
+    "PostWordpress": {
+      "Type": "Task",
+      "Resource": "${PostWordpressArn}",
+      "ResultPath": "$.WordpressPostURL",
+      "Parameters": {
+        "WordpressImage.$": "$.WordpressImage",
+        "blogPost.$": "$.blogPost",
+        "metaOut.$": "$.metaOut",
+        "SummaryOut.$": "$.SummaryOut"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "WriteBackGoogleSheets"
+    },
+    "WriteBackGoogleSheets": {
+      "Type": "Task",
+      "Resource": "${WriteBackGoogleSheetsArn}",
+      "Parameters": {
+        "WordpressImage.$": "$.WordpressImage",
+        "FluxPromptOut.$": "$.FluxPromptOut",
+        "metaOut.$": "$.metaOut",
+        "SummaryOut.$": "$.SummaryOut",
+        "WordpressPostURL.$": "$.WordpressPostURL"
+      },
+      "ResultPath": "$.GoogleSheets",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 99,
+          "BackoffRate": 1.1
+        }
+      ],
+      "Next": "EmptyBucket"
+    },
+    "EmptyBucket": {
+      "Type": "Task",
+      "Resource": "${EmptyBucketArn}",
+      "InputPath": "$.GoogleSheets",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 15,
+          "MaxAttempts": 999,
+          "BackoffRate": 1.1
+        }
+      ],
+      "End": true
     }
   }
+}
