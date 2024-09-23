@@ -84,7 +84,7 @@ Resources:
   ReadGoogleSheetsCell:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/ReadGoogleSheets
+      CodeUri: ./functions/01_ReadGoogleSheets
       Handler: read_google_sheets_cell.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -113,7 +113,7 @@ Resources:
   GenerateTableOfContents:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/CreateTOC
+      CodeUri: ./functions/02_CreateTOC
       Handler: generate_table_of_contents.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -139,7 +139,7 @@ Resources:
   ProcessSectionLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/ProcessSections
+      CodeUri: ./functions/03_ProcessSections
       Handler: Process_Section_Lambda.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -164,7 +164,7 @@ Resources:
   ConcatenateResultsLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/ConcatenateResults
+      CodeUri: ./functions/04_ConcatenateResults
       Handler: Concatenate_Results.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -175,7 +175,7 @@ Resources:
   GenerateSummary:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/GenerateSummary
+      CodeUri: ./functions/05_GenerateSummary
       Handler: Generate_Summary.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -200,7 +200,7 @@ Resources:
   GenerateFluxPrompt:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/GenerateFluxPrompt
+      CodeUri: ./functions/06_GenerateFluxPrompt
       Handler: Generate_Flux_Prompt.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -225,7 +225,7 @@ Resources:
   GenerateFluxImage:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/GenerateFluxImage
+      CodeUri: ./functions/07_GenerateFluxImage
       Handler: Generate_Flux_Image.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -255,7 +255,7 @@ Resources:
   PostImageWordpress:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/PostImageWordpress
+      CodeUri: ./functions/08_PostImageWordpress
       Handler: Post_Image_Wordpress.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -286,7 +286,7 @@ Resources:
   PostWordpress:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/PostWordpress
+      CodeUri: ./functions/09_PostWordpress
       Handler: Post_Wordpress.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -313,7 +313,7 @@ Resources:
   WriteBackGoogleSheets:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/WriteBackGoogleSheets
+      CodeUri: ./functions/10_WriteBackGoogleSheets
       Handler: Write_Back_Google_Sheets.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -340,7 +340,7 @@ Resources:
   EmptyBucket:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/EmptyBucket
+      CodeUri: ./functions/11_EmptyBucket
       Handler: Empty_Bucket.lambda_handler
       Runtime: python3.12
       Timeout: 900
@@ -371,3 +371,36 @@ Outputs:
   VBlissBlogS3Bucket:
     Description: "VBliss Blog Temporary S3 bucket for Images"
     Value: !GetAtt TempS3Bucket.Arn
+  VBlissBlogLambda1:
+    Description: !GetAtt ReadGoogleSheetsCell.Name
+    Value: !GetAtt ReadGoogleSheetsCell.Arn
+  VBlissBlogLambda2:
+    Description: !GetAtt GenerateTableOfContents.Name
+    Value: !GetAtt GenerateTableOfContents.Arn
+  VBlissBlogLambda3:
+    Description: !GetAtt ProcessSectionLambda.Name
+    Value: !GetAtt ProcessSectionLambda.Arn
+  VBlissBlogLambda4:
+    Description: !GetAtt ConcatenateResultsLambda.Name
+    Value: !GetAtt ConcatenateResultsLambda.Arn
+  VBlissBlogLambda5:
+    Description: !GetAtt GenerateSummary.Name
+    Value: !GetAtt GenerateSummary.Arn
+  VBlissBlogLambda6:
+    Description: !GetAtt GenerateFluxPrompt.Name
+    Value: !GetAtt GenerateFluxPrompt.Arn
+  VBlissBlogLambda7:
+    Description: !GetAtt GenerateFluxImage.Name
+    Value: !GetAtt GenerateFluxImage.Arn
+  VBlissBlogLambda8:
+    Description: !GetAtt PostImageWordpress.Name
+    Value: !GetAtt PostImageWordpress.Arn
+  VBlissBlogLambda9:
+    Description: !GetAtt PostWordpress.Name
+    Value: !GetAtt PostWordpress.Arn
+  VBlissBlogLambda10:
+    Description: !GetAtt WriteBackGoogleSheets.Name
+    Value: !GetAtt WriteBackGoogleSheets.Arn
+  VBlissBlogLambda11:
+    Description: !GetAtt EmptyBucket.Name
+    Value: !GetAtt EmptyBucket.Arn
