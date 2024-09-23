@@ -120,14 +120,6 @@
       "ResultPath": "$.FluxImage",
       "Retry": [
         {
-          "ErrorEquals": [
-            "APIError"
-          ],
-          "IntervalSeconds": 60,
-          "MaxAttempts": 99,
-          "BackoffRate": 2.0
-        },
-        {
           "ErrorEquals": ["States.TaskFailed"],
           "IntervalSeconds": 60,
           "MaxAttempts": 99,

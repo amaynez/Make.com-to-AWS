@@ -1,3 +1,4 @@
 boto3
 Pillow
-huggingface_hub
+sagemaker
+setuptools

@@ -65,16 +65,6 @@ Resources:
                   - !GetAtt PostWordpress.Arn
                   - !GetAtt WriteBackGoogleSheets.Arn
                   - !GetAtt EmptyBucket.Arn
-              - Effect: Allow
-                Action:
-                  - states:ListExecutions
-                  - states:StopExecution
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - states:DescribeExecution
-                  - states:StopExecution
-                Resource: '*'
  
   # State Machine Definition
   VBlissBlogStateMachine:
@@ -268,26 +258,22 @@ Resources:
           S3_BUCKET_NAME: !Ref TempS3Bucket
           SECRET: 'HuggingFaceAPISecret'
           REGION: 'us-west-2'
+          MODEL_ID: 'black-forest-labs/FLUX.1-dev'
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17' 
           Statement:
             - Effect: Allow
               Action:
-                - 'secretsmanager:GetSecretValue'
-              Resource: '*'
-            - Effect: Allow
-              Action:
-                - 'kms:Decrypt'
-                - 'kms:DescribeKey'
-              Resource: '*'
-            - Effect: Allow
-              Action:
                 - 's3:PutObject'
               Resource: !Sub '${TempS3Bucket.Arn}/*'
             - Effect: Allow
               Action:
-                - 's3:GetObject'
+                - 'sagemaker:InvokeEndpoint'
+                - 'sagemaker:DescribeEndpoint'
+                - 'sagemaker:DeleteEndpoint'
+                - 'sagemaker:DescribeEndpointConfig'
+                - 'sagemaker:CreateEndpoint'
               Resource: '*'
 
   PostImageWordpress:
