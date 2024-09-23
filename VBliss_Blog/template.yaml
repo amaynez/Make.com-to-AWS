@@ -43,7 +43,7 @@ Resources:
         BlogPostingSchedule:
           Type: Schedule
           Properties:
-            Description: Schedule to write the blog post every 15 minutes
+            Description: Schedule to write the blog post every 30 minutes
             Enabled: True # Set to False for debugging to avoid unnecessary charges
             Schedule: "rate(30 minutes)"
       Policies:
