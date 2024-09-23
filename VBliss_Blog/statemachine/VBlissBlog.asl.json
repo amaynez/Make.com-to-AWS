@@ -37,7 +37,7 @@
             "item.$": "$$.Map.Item.Value",
             "metaOut.$": "$.metaOut"
           },
-        "MaxConcurrency": 0,
+        "MaxConcurrency": 1,
         "Iterator": {
           "StartAt": "WaitTime",
           "States": {

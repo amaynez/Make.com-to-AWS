@@ -1,23 +1,24 @@
+# VBliss-Blog automation system
+# 
+# This template creates a Step Functions state machine that orchestrates Lambda functions
+# to generate and publish blog posts automatically. The system:
+# 1. Reads data from Google Sheets
+# 2. Generates a table of contents
+# 3. Processes blog post sections
+# 4. Concatenates results
+# 5. Generates a summary
+# 6. Creates an image using AI
+# 7. Posts content to WordPress
+# 8. Updates Google Sheets
+# 9. Cleans up temporary storage
+#
+# It also sets up IAM roles, S3 bucket, and schedules the state machine.
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: >
+Description: >-
   VBliss-Blog
 
-  VBliss-Blog automation system.
-  It creates a Step Functions state machine that orchestrates a series of Lambda functions
-  to generate and publish blog posts automatically. The system performs the following tasks:
-  1. Reads data from Google Sheets
-  2. Generates a table of contents
-  3. Processes individual sections of the blog post
-  4. Concatenates the results
-  5. Generates a summary
-  6. Creates an image prompt and generates an image using AI
-  7. Posts the image and content to WordPress
-  8. Updates Google Sheets with the results
-  9. Cleans up temporary storage
-
-# The template also sets up necessary IAM roles, S3 bucket for temporary storage,
-# and schedules the state machine to run periodically.
+  SAM Template for VBliss-Blog automation
 
 Resources:
   # State Machine Definition
@@ -44,7 +45,7 @@ Resources:
           Properties:
             Description: Schedule to write the blog post every 15 minutes
             Enabled: True # Set to False for debugging to avoid unnecessary charges
-            Schedule: "rate(15 minutes)"
+            Schedule: "rate(30 minutes)"
       Policies:
         # Policies to allow the state machine to invoke Lambda functions
         - LambdaInvokePolicy:
@@ -348,6 +349,7 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref TempS3Bucket
+          EMPTY_ON: 'false'
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17' 
@@ -372,35 +374,35 @@ Outputs:
     Description: "VBliss Blog Temporary S3 bucket for Images"
     Value: !GetAtt TempS3Bucket.Arn
   VBlissBlogLambda1:
-    Description: !GetAtt ReadGoogleSheetsCell.Name
+    Description: "ReadGoogleSheetsCell"
     Value: !GetAtt ReadGoogleSheetsCell.Arn
   VBlissBlogLambda2:
-    Description: !GetAtt GenerateTableOfContents.Name
+    Description: "GenerateTableOfContents"
     Value: !GetAtt GenerateTableOfContents.Arn
   VBlissBlogLambda3:
-    Description: !GetAtt ProcessSectionLambda.Name
+    Description: "ProcessSectionLambda"
     Value: !GetAtt ProcessSectionLambda.Arn
   VBlissBlogLambda4:
-    Description: !GetAtt ConcatenateResultsLambda.Name
+    Description: "ConcatenateResultsLambda"
     Value: !GetAtt ConcatenateResultsLambda.Arn
   VBlissBlogLambda5:
-    Description: !GetAtt GenerateSummary.Name
+    Description: "GenerateSummary"
     Value: !GetAtt GenerateSummary.Arn
   VBlissBlogLambda6:
-    Description: !GetAtt GenerateFluxPrompt.Name
+    Description: "GenerateFluxPrompt"
     Value: !GetAtt GenerateFluxPrompt.Arn
   VBlissBlogLambda7:
-    Description: !GetAtt GenerateFluxImage.Name
+    Description: "GenerateFluxImage"
     Value: !GetAtt GenerateFluxImage.Arn
   VBlissBlogLambda8:
-    Description: !GetAtt PostImageWordpress.Name
+    Description: "PostImageWordpress"
     Value: !GetAtt PostImageWordpress.Arn
   VBlissBlogLambda9:
-    Description: !GetAtt PostWordpress.Name
+    Description: "PostWordpress"
     Value: !GetAtt PostWordpress.Arn
   VBlissBlogLambda10:
-    Description: !GetAtt WriteBackGoogleSheets.Name
+    Description: "WriteBackGoogleSheets"
     Value: !GetAtt WriteBackGoogleSheets.Arn
   VBlissBlogLambda11:
-    Description: !GetAtt EmptyBucket.Name
+    Description: "EmptyBucket"
     Value: !GetAtt EmptyBucket.Arn
