@@ -2,55 +2,57 @@ import json
 import os
 import boto3
 
+"""
+This Lambda function generates a summary for a blog post using Amazon Bedrock AI models.
+It takes blog post metadata and content as input, prepares a prompt for the AI model,
+and attempts to generate a summary using multiple Bedrock models in case of failures.
+
+Key features:
+- Extracts blog post title, keywords, and content from the input event
+- Uses environment variables for system and user prompts
+- Tries multiple Bedrock AI models in case of failures
+- Returns the generated summary along with the successful model ID
+"""
+
 def lambda_handler(event, context):
-    # Get the input content from the event
-
-    meta_response = event.get("Payload", {}).get("metaOut") 
-    body_content_meta = json.loads(meta_response.get('body', '{}'))
-    title = body_content_meta.get('title')
-    keywords = body_content_meta.get('keywords')
+    # Extract data from event
+    payload = event.get("Payload", {})
+    meta_response = payload.get("metaOut", {})
+    blog_post = payload.get("blogPost", {})
     
-    blog_post = event.get("Payload", {}).get("blogPost")
-    body_content_post = json.loads(blog_post.get('body', '{}'))
-    blog_body = body_content_post.get('blog_post', '')
-    blog_body = blog_body.strip()
+    # Parse JSON responses from previous steps
+    meta_content = json.loads(meta_response.get('body', '{}'))
+    post_content = json.loads(blog_post.get('body', '{}'))
 
-    # Get the system prompt from the event (if provided)
+    # Prepare prompt components
+    title = meta_content.get('title', '')
+    keywords = meta_content.get('keywords', '')
+    blog_body = post_content.get('blog_post', '').strip()
+
+    # Retrieve prompts from environment variables and format them
     system_prompt = os.environ['SYSTEM_PROMPT']
-    user_prompt = os.environ['USER_PROMPT'].replace("#####",title)
-    user_prompt = user_prompt.replace("$$$$$", blog_body)
-    user_prompt = user_prompt.replace("!!!!!", keywords)
+    user_prompt = os.environ['USER_PROMPT'].replace("#####", title).replace("$$$$$", blog_body).replace("!!!!!", keywords)
 
-    # Create an Amazon Bedrock Runtime client
-    bedrock_runtime = boto3.client('bedrock-runtime')
-    
-    # Define a list of model IDs to try
-    model_ids = [
-        os.environ['BEDROCK_MODEL_ID_1'],
-        os.environ['BEDROCK_MODEL_ID_2'],
-        os.environ['BEDROCK_MODEL_ID_3'],
-        os.environ['BEDROCK_MODEL_ID_4']
-    ]
-
+    # Prepare request body for Bedrock API
     request_body = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 32000,
         "messages": [
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"{system_prompt}\n\n{user_prompt}"
-                    }
-                ]
+                "content": [{"type": "text", "text": f"{system_prompt}\n\n{user_prompt}"}]
             }
         ]
     }
 
+    # Create Bedrock client and get model IDs from environment variables
+    bedrock_runtime = boto3.client('bedrock-runtime')
+    model_ids = [os.environ[f'BEDROCK_MODEL_ID_{i}'] for i in range(1, 5)]
+
+    # Try each model in sequence until successful or all fail
     for model_id in model_ids:
         try:
-            # Make the API call to Amazon Bedrock using invoke_model
+            # Invoke Bedrock model
             response = bedrock_runtime.invoke_model(
                 modelId=model_id,
                 contentType='application/json',
@@ -58,27 +60,22 @@ def lambda_handler(event, context):
                 body=json.dumps(request_body)
             )
             
-            # Parse the JSON response
+            # Parse response and extract generated text
             response_data = json.loads(response['body'].read())
-            
             response_text = response_data['content'][0]['text']
 
+            # Return successful response with generated summary and model ID
             return {
                 'statusCode': 200,
-                'body': json.dumps({
-                        'summary': response_text
-                    }),
+                'body': json.dumps({'summary': response_text}),
                 'headers': {
                     'Content-Type': 'application/json',
                     'modelUsed': model_id
                 }
             }
-        except json.JSONDecodeError as json_err:
-            error_message = f"JSON decoding error: {str(json_err)}\nResponse text: {response_text}"
-            print(error_message)
         except Exception as e:
-            error_message = f"An error occurred: {str(e)}"
-            print(error_message)  # This will log the error in CloudWatch
+            # Log error and continue to next model
+            print(f"Error with model {model_id}: {str(e)}")
 
-    # If none of the models succeeded, return an error
+    # If all models fail, raise an exception
     raise Exception("All models failed to generate output.")

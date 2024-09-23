@@ -1,11 +1,40 @@
-import json
-import requests
-from requests.auth import HTTPBasicAuth
-import boto3
-from botocore.exceptions import ClientError
-import os
+"""
+This script is a Lambda function that posts a blog article to WordPress.com using their REST API.
 
+It performs the following main tasks:
+1. Retrieves secret credentials from AWS Secrets Manager
+2. Extracts blog post data from the Lambda event
+3. Obtains an OAuth access token from WordPress.com
+4. Posts the blog article to WordPress.com using the REST API
+
+The script expects the following environment variables:
+- SECRET: Name of the secret in AWS Secrets Manager
+- REGION: AWS region where the secret is stored
+- API_URL: WordPress.com API URL template
+
+The Lambda event should contain the following data:
+- WordpressImage: Featured image information
+- blogPost: Main content of the blog post
+- metaOut: Metadata including title and category
+- SummaryOut: Blog post excerpt/summary
+"""
+
+import json
+import os
+from functools import lru_cache
+import boto3
+import requests
+from botocore.exceptions import ClientError
+
+@lru_cache(maxsize=1)
 def get_secret(secret_name, region_name):
+    """
+    Retrieve a secret from AWS Secrets Manager.
+    
+    :param secret_name: Name of the secret in Secrets Manager
+    :param region_name: AWS region where the secret is stored
+    :return: Secret value as a string
+    """
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
@@ -17,6 +46,7 @@ def get_secret(secret_name, region_name):
             SecretId=secret_name
         )
     except ClientError as e:
+        # If there's an error, re-raise it
         raise e
 
     # Return the secret string directly
@@ -27,55 +57,49 @@ def get_secret(secret_name, region_name):
         return get_secret_value_response['SecretBinary']
 
 def lambda_handler(event, context):
-    # Extract the data needed from the event body
-    parsed_wpimage_response = event.get("WordpressImage", {}).get("body")
-    featured_image_id = json.loads(parsed_wpimage_response).get('media_id', '{}')
+    """
+    Main Lambda function handler.
+    
+    :param event: Lambda event containing blog post data
+    :param context: Lambda context
+    :return: Dictionary with statusCode and the URL of the published post
+    """
+    # Extract data from event
+    wp_image_data = json.loads(event.get("WordpressImage", {}).get("body", "{}"))
+    featured_image_id = wp_image_data.get('media_id')
 
-    blog_post = event.get("blogPost")
-    body_content_post = json.loads(blog_post.get('body', '{}'))
-    post_text = body_content_post.get('blog_post', '')
+    blog_post_data = json.loads(event.get("blogPost", {}).get('body', '{}'))
+    post_text = blog_post_data.get('blog_post', '')
 
-    parsed_meta_response = event["metaOut"]
-    meta_content = json.loads(parsed_meta_response.get('body', '{}'))
+    meta_content = json.loads(event.get("metaOut", {}).get('body', '{}'))
     title = meta_content.get('title')
     category_id = meta_content.get('category_id')
 
-    blog_summary = event.get("SummaryOut")
-    body_summary_post = json.loads(blog_summary.get('body', '{}'))
-    excerpt = body_summary_post.get('summary', '')
+    summary_data = json.loads(event.get("SummaryOut", {}).get('body', '{}'))
+    excerpt = summary_data.get('summary', '')
   
-    # Retrieve Wordpress Credentials
-    wp_secret_str = get_secret(os.environ['SECRET'], os.environ['REGION'])
-    wp_secret = json.loads(wp_secret_str)
-    client_secret = wp_secret.get('client_secret')
-    client_id = wp_secret.get('client_id')
-    redirect_uri = wp_secret.get('redirect_uri')
-    site_id = wp_secret.get('site_id')
-    username = wp_secret.get('username')
-    password = wp_secret.get('password')
-
-    data = {
-        'grant_type': 'password',
-        'username': username,
-        'password': password,
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'redirect_uri': redirect_uri,
-        'blog_id': site_id
-    }
-
-    token = requests.post('https://public-api.wordpress.com/oauth2/token', data=data).json()['access_token']
-
-    # WordPress API endpoint
-    wp_api_url = os.environ['API_URL']
-    wp_api_url = wp_api_url.replace("$site", str(site_id))
-
-    # Prepare headers
-    headers = {
-        'authorization': f'Bearer {token}'
-    }
+    # Retrieve WordPress Credentials from Secrets Manager
+    wp_secret = json.loads(get_secret(os.environ['SECRET'], os.environ['REGION']))
     
-    # Prepare the post data
+    # Prepare OAuth data for token request
+    oauth_data = {
+        'grant_type': 'password',
+        'username': wp_secret['username'],
+        'password': wp_secret['password'],
+        'client_id': wp_secret['client_id'],
+        'client_secret': wp_secret['client_secret'],
+        'redirect_uri': wp_secret['redirect_uri'],
+        'blog_id': wp_secret['site_id']
+    }
+
+    # Get access token from WordPress.com
+    token_response = requests.post('https://public-api.wordpress.com/oauth2/token', data=oauth_data)
+    token_response.raise_for_status()
+    token = token_response.json()['access_token']
+
+    # Prepare WordPress API request
+    wp_api_url = os.environ['API_URL'].replace("$site", str(wp_secret['site_id']))
+    headers = {'Authorization': f'Bearer {token}'}
     post_data = {
         'title': title,
         'content': post_text,
@@ -85,17 +109,12 @@ def lambda_handler(event, context):
         'status': 'publish'
     }
     
-    # Make the API request
-    response = requests.post(
-        wp_api_url,
-        headers=headers,
-        json=post_data
-    )
+    # Make the API request to create the post
+    response = requests.post(wp_api_url, headers=headers, json=post_data)
+    response.raise_for_status()
     
-    if response.status_code == 200:
-        return {
-            'statusCode': 200,
-            'body': response.json()['URL']
-        }
-    else:
-        raise Exception(response.text)
+    # Return the URL of the published post
+    return {
+        'statusCode': 200,
+        'body': response.json()['URL']
+    }

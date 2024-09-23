@@ -1,6 +1,18 @@
+"""
+This script is an AWS Lambda function that handles the process of uploading an image to WordPress.
+It performs the following main tasks:
+1. Retrieves an image from an S3 bucket
+2. Fetches WordPress credentials from AWS Secrets Manager
+3. Authenticates with WordPress and obtains an access token
+4. Uploads the image to WordPress with associated metadata
+5. Returns the media ID and URL of the uploaded image
+
+The script is designed to work within an AWS environment and requires specific environment variables
+and event structure.
+"""
+
 import json
 import requests
-from requests.auth import HTTPBasicAuth
 import boto3
 from botocore.exceptions import ClientError
 import os
@@ -8,6 +20,13 @@ from urllib.parse import urlparse
 import logging
 
 def get_secret(secret_name, region_name):
+    """
+    Retrieve a secret from AWS Secrets Manager.
+    
+    :param secret_name: Name of the secret to retrieve
+    :param region_name: AWS region where the secret is stored
+    :return: Secret value as a string
+    """
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
@@ -29,6 +48,13 @@ def get_secret(secret_name, region_name):
         return get_secret_value_response['SecretBinary']
 
 def get_image_from_s3(s3_url, region_name='us-west-2'):
+    """
+    Retrieve an image from an S3 bucket.
+    
+    :param s3_url: S3 URL of the image
+    :param region_name: AWS region where the S3 bucket is located
+    :return: Image content as bytes
+    """
     s3 = boto3.client('s3', region_name=region_name)
     parsed_url = urlparse(s3_url)
     bucket_name = parsed_url.netloc.split('.')[0]
@@ -51,107 +77,88 @@ def get_image_from_s3(s3_url, region_name='us-west-2'):
             raise Exception(f"Error retrieving image from S3: {str(e)}")
 
 def lambda_handler(event, context):
+    """
+    Main Lambda function handler.
+    
+    :param event: Lambda event containing input data
+    :param context: Lambda context
+    :return: Dictionary with status code and uploaded image details
+    """
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # Extract the data needed from the event body
-    parsed_prompt_response = json.loads(json.dumps(event["FluxPromptOut"]))
-    alt_text = json.loads(parsed_prompt_response.get('body', '{}'))
-
     try:
+        # Extract data from event
+        parsed_prompt_response = event["FluxPromptOut"]
+        alt_text = json.loads(parsed_prompt_response.get('body', '{}'))
+        
         parsed_image_response = event.get("FluxImage", {})
         s3_image_url = parsed_image_response.get("body", "")
         filename = s3_image_url.split('/')[-1] if s3_image_url else ""
+
+        meta_content = json.loads(event["metaOut"]["body"])
+        title = meta_content.get('title')
+
+        region = os.environ['REGION']
+
+        # Retrieve image from S3
+        image_data = get_image_from_s3(s3_image_url, region)
+
+        # Retrieve WordPress Credentials
+        wp_secret = json.loads(get_secret(os.environ['SECRET'], region))
+        
+        # Authenticate and get access token
+        token = get_wordpress_token(wp_secret)
+
+        # Upload image to WordPress
+        media_id, media_url = upload_image_to_wordpress(token, wp_secret['site_id'], filename, image_data, title, alt_text)
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'media_id': media_id,
+                'url': media_url
+            })
+        }
     except Exception as e:
-        print(f"Error processing image url: {str(e)}")
-        raise e
+        logger.error(f"Error in lambda_handler: {str(e)}")
+        raise
 
-    region = os.environ['REGION']
-
-    meta_content = json.loads(event["metaOut"]["body"])
-    title = meta_content.get('title')
-
-    # Retrieve image from S3
-    image_data = get_image_from_s3(s3_image_url,region)
-
-    # Retrieve Wordpress Credentials
-    wp_secret_str = get_secret(os.environ['SECRET'], region)
-    wp_secret = json.loads(wp_secret_str)
-    client_secret = wp_secret.get('client_secret')
-    client_id = wp_secret.get('client_id')
-    redirect_uri = wp_secret.get('redirect_uri')
-    site_id = wp_secret.get('site_id')
-    username = wp_secret.get('username')
-    password = wp_secret.get('password')
-
+def get_wordpress_token(wp_secret):
     data = {
         'grant_type': 'password',
-        'username': username,
-        'password': password,
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'redirect_uri': redirect_uri,
-        'blog_id': site_id
+        'username': wp_secret['username'],
+        'password': wp_secret['password'],
+        'client_id': wp_secret['client_id'],
+        'client_secret': wp_secret['client_secret'],
+        'redirect_uri': wp_secret['redirect_uri'],
+        'blog_id': wp_secret['site_id']
     }
 
     response = requests.post('https://public-api.wordpress.com/oauth2/token', data=data)
+    response.raise_for_status()
+    return response.json()['access_token']
 
-    if response.status_code == 200:
-        response_json = response.json()
-        if 'access_token' in response_json:
-            token = response_json['access_token']
-        else:
-            print(f"'access_token' not found in response. Keys present: {response_json.keys()}")
-            raise KeyError("'access_token' not found in API response")
-    else:
-        print(f"Error response from API: {response.text}")
-        raise Exception(f"API request failed with status code {response.status_code}, response: {response.text}")
-
-
-    # WordPress API endpoint
-    wp_api_url = os.environ['API_URL']
-    wp_api_url = wp_api_url.replace("$site", str(site_id))
-
-    # Prepare headers
-    headers = {
-        'authorization': f'Bearer {token}'
-    }
-
-    files = {
-        'media[0]': (filename, image_data, 'image/png')
-    }
-
+def upload_image_to_wordpress(token, site_id, filename, image_data, title, alt_text):
+    wp_api_url = os.environ['API_URL'].replace("$site", str(site_id))
+    
+    headers = {'authorization': f'Bearer {token}'}
+    
+    files = {'media[0]': (filename, image_data, 'image/png')}
+    
     data = {
-        'attrs[0]': {
+        'attrs[0]': json.dumps({
             'caption': 'Imagen generada por Flux AI',
             'title': title,
             'alt_text': alt_text,
             'description': alt_text,
             'status': 'publish',
             'filename': filename
-        }
+        })
     }
 
-
-    # Make the API request
-    response = requests.post(
-        wp_api_url,
-        headers=headers,
-        files=files,  # Use files to send the image
-        data=data  # Send metadata as form data
-    )
-
-    if response.status_code == 200:
-        result=response.json()
-        media_item = result['media'][0]
-        media_id = media_item['ID']
-        media_url = media_item['URL']
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'media_id': media_id,
-                'url': media_url
-                })
-        }
-    else:
-        raise Exception(f"Failed to upload image: {response.text}")   
+    response = requests.post(wp_api_url, headers=headers, files=files, data=data)
+    response.raise_for_status()
+    result = response.json()
+    media_item = result['media'][0]
+    return media_item['ID'], media_item['URL']

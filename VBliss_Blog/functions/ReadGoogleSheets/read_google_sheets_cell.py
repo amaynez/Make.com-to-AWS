@@ -1,3 +1,15 @@
+"""
+This script is a Lambda function that interacts with Google Sheets API to find the next available blog post to create.
+
+Key features:
+1. Retrieves Google Sheets API credentials from AWS Secrets Manager
+2. Connects to a specified Google Sheet
+3. Finds the first empty cell in column A with non-empty data in column B
+4. Returns relevant information for the next blog post to be created
+
+The script is designed to be run as an AWS Lambda function and requires specific environment variables to be set.
+"""
+
 import os
 import json
 from google.oauth2 import service_account
@@ -5,7 +17,21 @@ from googleapiclient.discovery import build
 import boto3
 from botocore.exceptions import ClientError
 
+# Function to retrieve a secret from AWS Secrets Manager
 def get_secret(secret_name, region_name):
+    """
+    Retrieve a secret from AWS Secrets Manager.
+
+    Args:
+        secret_name (str): The name of the secret to retrieve.
+        region_name (str): The AWS region where the secret is stored.
+
+    Returns:
+        str: The secret string value.
+
+    Raises:
+        ClientError: If there's an error retrieving the secret.
+    """
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
@@ -17,6 +43,7 @@ def get_secret(secret_name, region_name):
             SecretId=secret_name
         )
     except ClientError as e:
+        # If there's an error, re-raise it
         raise e
 
     # Return the secret string directly
@@ -26,25 +53,83 @@ def get_secret(secret_name, region_name):
         # In case the secret is binary
         return get_secret_value_response['SecretBinary']
 
+# Function to create and return a Google Sheets service object
+def get_sheets_service(secret_name, region_name):
+    """
+    Create and return a Google Sheets service object.
+
+    Args:
+        secret_name (str): The name of the secret containing Google Sheets API credentials.
+        region_name (str): The AWS region where the secret is stored.
+
+    Returns:
+        googleapiclient.discovery.Resource: A Google Sheets service object.
+    """
+    # Get the secret containing Google Sheets API credentials
+    secret_string = get_secret(secret_name, region_name)
+    secret = json.loads(secret_string)
+    # Create credentials from the secret
+    credentials = service_account.Credentials.from_service_account_info(secret)
+    # Build and return the Google Sheets service object
+    return build('sheets', 'v4', credentials=credentials)
+
+# Function to find the first empty cell in column A and return relevant information
+def find_first_empty_cell(values):
+    """
+    Find the first empty cell in column A with non-empty data in column B.
+
+    Args:
+        values (list): A 2D list containing the values from the Google Sheet.
+
+    Returns:
+        dict: A dictionary containing relevant information for the next blog post.
+
+    Raises:
+        Exception: If no pending blog post is found or if no empty cell is found in column A with a non-empty cell in column B.
+    """
+    for i, row in enumerate(values):
+        if not row[0]:  # If the first column (A) is empty
+            if not row[1]:  # If the second column (B) is also empty
+                raise Exception('No pending blog post to create')
+            # Return a dictionary with relevant information
+            return {
+                "title": row[1],        # Column B: Title
+                "keywords": row[7],     # Column H: Keywords
+                "category_id": row[9],  # Column J: Category ID
+                "row_number": i + 1     # Row number (1-indexed)
+            }
+    # If no empty cell is found in column A with a non-empty cell in column B
+    raise Exception('No empty cell found in column A with a non-empty cell in column B')
+
+# Main Lambda function handler
 def lambda_handler(event, context):
+    """
+    Main Lambda function handler.
+
+    This function retrieves data from a Google Sheet, finds the next available blog post,
+    and returns the relevant information.
+
+    Args:
+        event (dict): The event data passed to the Lambda function.
+        context (object): The runtime information of the Lambda function.
+
+    Returns:
+        dict: A dictionary containing the status code, body (with blog post information),
+              and headers for the HTTP response.
+
+    Raises:
+        Exception: If no data is found in the Google Sheet.
+    """
+    # Retrieve environment variables
     secret_name = os.environ['SECRET_NAME']
     region_name = os.environ['REGION_NAME']
-    secret_string = get_secret(secret_name, region_name)
-
-    # Parse the JSON string
-    secret = json.loads(secret_string)
-
-    # Create credentials using the JSON data from Secrets Manager
-    credentials = service_account.Credentials.from_service_account_info(secret)
-
-    # Create a Google Sheets API client
-    sheets_service = build('sheets', 'v4', credentials=credentials)
-    
-    # Set the ID of the Google Sheets spreadsheet and the range to read
     spreadsheet_id = os.environ['SPREADSHEET_ID']
     range_name = os.environ['RANGE_NAME']
+
+    # Get the Google Sheets service object
+    sheets_service = get_sheets_service(secret_name, region_name)
     
-    # Read the values from the specified range
+    # Retrieve values from the specified range in the spreadsheet
     result = sheets_service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id, range=range_name
     ).execute()
@@ -54,25 +139,14 @@ def lambda_handler(event, context):
     if not values:
         raise Exception('No data found')
     
-    # Find the first empty value in column A
-    for i, row in enumerate(values):
-        if row[0] == '':
-                if row[1] == '':
-                    raise Exception('No pending blog post to create')
-                else: 
-                    result = {
-                        "title": row[1],
-                        "keywords": row[7],
-                        "category_id": row[9],
-                        "row_number": i + 1
-                    }
-                    response = {
-                        'statusCode': 200,
-                        'body': json.dumps(result),
-                        'headers': {
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                    return response
+    # Find the first empty cell and get relevant information
+    result = find_first_empty_cell(values)
     
-    raise Exception('No empty cell found in column A')
+    # Return the result as a JSON response
+    return {
+        'statusCode': 200,
+        'body': json.dumps(result),
+        'headers': {
+            'Content-Type': 'application/json'
+        }
+    }
