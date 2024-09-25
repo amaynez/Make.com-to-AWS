@@ -33,6 +33,12 @@ Description: >-
 
   SAM Template for VBliss-Blog automation
 
+Globals:
+  Function:
+    Tags:
+      CostCenter: VBliss
+      Project: Blog
+      
 Resources:
   # Define a separate IAM role for the state machine
   VBlissBlogStateMachineRole:
