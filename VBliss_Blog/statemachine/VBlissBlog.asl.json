@@ -1,7 +1,35 @@
 {
-  "Comment": "A state machine that writes blog posts for VBliss.",
-  "StartAt": "Get Google Sheet Value",
+  "Comment": "A state machine that writes blog posts for VBliss, with execution check.",
+  "StartAt": "Check Running Execution",
   "States": {
+    "Check Running Execution": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:sfn:listExecutions",
+      "Parameters": {
+        "StateMachineArn.$": "$$.StateMachine.Id",
+        "StatusFilter": "RUNNING"
+      },
+      "ResultPath": "$.runningExecutions",
+      "Next": "Is Execution Running"
+    },
+    "Is Execution Running": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.runningExecutions.Executions[1]",
+          "IsPresent": true,
+          "Next": "Stop Execution"
+        }
+      ],
+      "Default": "Get Google Sheet Value"
+    },
+    "Stop Execution": {
+      "Type": "Pass",
+      "Result": {
+        "status": "Execution stopped due to another running instance"
+      },
+      "End": true
+    },
     "Get Google Sheet Value": {
       "Type": "Task",
       "Resource": "${ReadGoogleSheetsCellArn}",
