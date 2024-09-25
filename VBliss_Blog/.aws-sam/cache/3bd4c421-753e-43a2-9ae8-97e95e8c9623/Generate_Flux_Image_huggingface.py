@@ -51,39 +51,17 @@ def lambda_handler(event, context):
     prompt = json.loads(event['body'])
     region_name = os.environ['REGION']
     bucket_name = os.environ['S3_BUCKET_NAME']
-    model_name = os.environ['MODEL_NAME']
     token = get_secret(os.environ['SECRET'], region_name)
-    url = "https://api.hyperbolic.xyz/v1/image/generation"
+    API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev"
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"inputs": prompt}
     s3_url = ""
-    
-    headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {token}"
-    }
-
-    data = {
-        "model_name": model_name,
-        "prompt": prompt,
-        "steps": 25,
-        "cfg_scale": 5,
-        "enable_refiner": False,
-        "height": 1024,
-        "width": 1024,
-        "backend": "auto"
-    }
 
     try:
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(API_URL, headers=headers, json=payload)
         response.raise_for_status()
-        json_response = response.json()
         
-        logger.info(f"API Response: {json_response}")
-
-        output_image = json_response['images'][0]['image']
-        
-        image_bytes = base64.b64decode(output_image)
-
-        s3_url = upload_image_to_s3(image_bytes, bucket_name, region_name)
+        s3_url = upload_image_to_s3(response, bucket_name, region_name)
         
         return {
             'statusCode': 200,

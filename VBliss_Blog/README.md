@@ -58,8 +58,6 @@ This AWS Step Functions State Machine automates the process of generating and pu
 
 The state machine comprises multiple states, each responsible for a specific task in the blog post creation and publishing process. Key states include:
 
-- ListExecutions
-- CheckExistingExecution
 - Get Google Sheet Value
 - GenerateTableOfContents
 - ProcessSections
@@ -113,13 +111,14 @@ To enable the schedule, set `Enabled: True` and redeploy the stack.
 1. Clone this repository
 2. Install the AWS SAM CLI
 3. Deploy the application using `sam deploy --guided`
-4. Configure the necessary API keys and credentials for external services
+4. Configure the necessary API keys and credentials for external services in AWS Secrets Manager
 
 ## Customization
 
 To customize this state machine for your specific needs, you may need to modify:
 
 - Lambda functions and other AWS resources
+- Create your own secrets in Secrets Manager to keep your API keys safe
 - Google Sheets integration details
 - WordPress configuration
 - Flux image generation parameters
