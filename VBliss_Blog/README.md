@@ -35,7 +35,7 @@ This AWS Step Functions State Machine automates the process of generating and pu
 2. **Summary and Image Generation**
    - Generate a summary of the blog post
    - Create a prompt for image generation
-   - Generate an image using Stability Diffusion
+   - Generate an image using Flux1.Dev from HuggingFace
 
 3. **WordPress Publishing**
    - Upload the generated image to WordPress
