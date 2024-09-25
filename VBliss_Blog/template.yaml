@@ -90,7 +90,7 @@ Resources:
           Type: Schedule
           Properties:
             Description: Schedule to write the blog post every 15 minutes
-            Enabled: False # Set to False for debugging to avoid unnecessary charges
+            Enabled: True # Set to False for debugging to avoid unnecessary charges
             Schedule: "rate(15 minutes)"
 
   # S3 Bucket for temporary storage of generated images
@@ -367,7 +367,7 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref TempS3Bucket
-          EMPTY_ON: 'false'
+          EMPTY_ON: 'true'
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: '2012-10-17' 
