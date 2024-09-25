@@ -1,5 +1,5 @@
 /VBliss_Blog/Sagemaker
-
+/VBliss_Blog/.aws-sam
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
