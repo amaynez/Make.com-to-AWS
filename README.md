@@ -8,7 +8,8 @@ This project aims to recreate complex [Make.com](https://make.com) scenarios usi
 
 - **Goal**: Recreate Make.com scenarios using AWS Step Functions and Lambda functions
 - **Motivation**: Potentially reduce costs for stable automation workflows
-- **Current Scenario**: [VBliss Blog](https://github.com/amaynez/Make.com-to-AWS/tree/main/VBliss_Blog)
+- **Working Scenario**: [VBliss Blog](https://github.com/amaynez/Make.com-to-AWS/tree/main/VBliss_Blog)
+- **Planned Scenarios**: VBliss Image Alt Text, Linkedin Posts
 
 ## Getting Started
 
