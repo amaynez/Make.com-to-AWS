@@ -8,7 +8,7 @@
 # 4. Concatenates results
 # 5. Generates a summary
 # 6. Generates a prompt for image creation
-# 7. Creates an image using AI (Stable Diffusion via Hugging Face)
+# 7. Creates an image using AI (Stable Diffusion via Bedrock)
 # 8. Posts image to WordPress
 # 9. Posts content to WordPress
 # 10. Updates Google Sheets
@@ -18,7 +18,7 @@
 # 
 # Key updates:
 # - Added multiple Bedrock model IDs to handle potential throttling
-# - Implemented image generation using Stable Diffusion models via Hugging Face
+# - Implemented image generation using Stable Diffusion models via Bedrock
 # - Added separate steps for generating image prompts and posting images to WordPress
 # - Updated environment variables and secrets management for new functionalities
 # - Adjusted IAM roles and policies to accommodate new Lambda functions and permissions
