@@ -1,4 +1,2 @@
 boto3
-Pillow
-sagemaker
-setuptools
+pillow

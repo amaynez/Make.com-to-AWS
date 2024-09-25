@@ -35,7 +35,7 @@ This AWS Step Functions State Machine automates the process of generating and pu
 2. **Summary and Image Generation**
    - Generate a summary of the blog post
    - Create a prompt for image generation
-   - Generate an image using Flux
+   - Generate an image using Stability Diffusion
 
 3. **WordPress Publishing**
    - Upload the generated image to WordPress
@@ -49,7 +49,7 @@ This AWS Step Functions State Machine automates the process of generating and pu
 
 - **Google Sheets Integration**: Read and write data to maintain blog post information
 - **Content Generation**: Use AI-powered Lambda functions to create blog post content
-- **Image Generation**: Utilize Hugging Face Serverless API for creating relevant images
+- **Image Generation**: Utilize Stability AI models in Bedrock for creating relevant images
 - **WordPress Integration**: Automatically publish posts and images to WordPress
 - **Error Handling**: Implement retry mechanisms for resilience
 - **Concurrency Control**: Manage parallel processing of blog post sections
