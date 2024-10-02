@@ -17,59 +17,47 @@ from googleapiclient.discovery import build
 import boto3
 from botocore.exceptions import ClientError
 
-# Function to retrieve a secret from AWS Secrets Manager
-def get_secret(secret_name, region_name):
+# Function to retrieve a parameter from AWS Systems Manager Parameter Store
+def get_parameter(parameter_name, region_name):
     """
-    Retrieve a secret from AWS Secrets Manager.
+    Retrieve a parameter from AWS Systems Manager Parameter Store.
 
     Args:
-        secret_name (str): The name of the secret to retrieve.
-        region_name (str): The AWS region where the secret is stored.
+        parameter_name (str): The name of the parameter to retrieve.
+        region_name (str): The AWS region where the parameter is stored.
 
     Returns:
-        str: The secret string value.
+        str: The parameter value.
 
     Raises:
-        ClientError: If there's an error retrieving the secret.
+        ClientError: If there's an error retrieving the parameter.
     """
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
+    ssm = boto3.client('ssm', region_name=region_name)
 
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+        return response['Parameter']['Value']
     except ClientError as e:
         # If there's an error, re-raise it
         raise e
 
-    # Return the secret string directly
-    if 'SecretString' in get_secret_value_response:
-        return get_secret_value_response['SecretString']
-    else:
-        # In case the secret is binary
-        return get_secret_value_response['SecretBinary']
-
 # Function to create and return a Google Sheets service object
-def get_sheets_service(secret_name, region_name):
+def get_sheets_service(parameter_name, region_name):
     """
     Create and return a Google Sheets service object.
 
     Args:
-        secret_name (str): The name of the secret containing Google Sheets API credentials.
-        region_name (str): The AWS region where the secret is stored.
+        parameter_name (str): The name of the parameter containing Google Sheets API credentials.
+        region_name (str): The AWS region where the parameter is stored.
 
     Returns:
         googleapiclient.discovery.Resource: A Google Sheets service object.
     """
-    # Get the secret containing Google Sheets API credentials
-    secret_string = get_secret(secret_name, region_name)
-    secret = json.loads(secret_string)
-    # Create credentials from the secret
-    credentials = service_account.Credentials.from_service_account_info(secret)
+    # Get the parameter containing Google Sheets API credentials
+    credentials_json = get_parameter(parameter_name, region_name)
+    credentials_dict = json.loads(credentials_json)
+    # Create credentials from the parameter
+    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
     # Build and return the Google Sheets service object
     return build('sheets', 'v4', credentials=credentials)
 
@@ -121,13 +109,13 @@ def lambda_handler(event, context):
         Exception: If no data is found in the Google Sheet.
     """
     # Retrieve environment variables
-    secret_name = os.environ['SECRET_NAME']
+    parameter_name = os.environ['PARAMETER_NAME']
     region_name = os.environ['REGION_NAME']
     spreadsheet_id = os.environ['SPREADSHEET_ID']
     range_name = os.environ['RANGE_NAME']
 
     # Get the Google Sheets service object
-    sheets_service = get_sheets_service(secret_name, region_name)
+    sheets_service = get_sheets_service(parameter_name, region_name)
     
     # Retrieve values from the specified range in the spreadsheet
     result = sheets_service.spreadsheets().values().get(

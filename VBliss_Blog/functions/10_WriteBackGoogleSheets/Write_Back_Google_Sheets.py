@@ -22,33 +22,20 @@ from googleapiclient.discovery import build
 import boto3
 from botocore.exceptions import ClientError
 
-def get_secret(secret_name, region_name):
+def get_parameter(parameter_name, region_name):
     """
-    Retrieve a secret from AWS Secrets Manager.
+    Retrieve a parameter from AWS Systems Manager Parameter Store.
     
-    :param secret_name: Name of the secret in Secrets Manager
-    :param region_name: AWS region where the secret is stored
-    :return: Secret string or binary data
+    :param parameter_name: Name of the parameter in Parameter Store
+    :param region_name: AWS region where the parameter is stored
+    :return: Parameter value
     """
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
-
+    ssm = boto3.client('ssm', region_name=region_name)
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+        return response['Parameter']['Value']
     except ClientError as e:
         raise e
-
-    # Return the secret string directly
-    if 'SecretString' in get_secret_value_response:
-        return get_secret_value_response['SecretString']
-    else:
-        # In case the secret is binary
-        return get_secret_value_response['SecretBinary']
 
 def parse_json_body(event, key):
     """
@@ -86,15 +73,15 @@ def lambda_handler(event, context):
     :return: Dictionary with status code, body, and headers
     """
     # Get environment variables
-    secret_name = os.environ['SECRET']
+    parameter_name = os.environ['PARAMETER_NAME']
     region_name = os.environ['REGION']
     spreadsheet_id = os.environ['SPREADSHEET_ID']
 
-    # Get the secret from AWS Secrets Manager
-    secret_string = get_secret(secret_name, region_name)
-    secret = json.loads(secret_string)
+    # Get the parameter from AWS Systems Manager Parameter Store
+    parameter_value = get_parameter(parameter_name, region_name)
+    secret = json.loads(parameter_value)
 
-    # Create credentials using the JSON data from Secrets Manager
+    # Create credentials using the JSON data from Parameter Store
     credentials = service_account.Credentials.from_service_account_info(secret)
 
     # Create a Google Sheets API client

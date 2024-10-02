@@ -126,7 +126,7 @@ Resources:
         Variables:
           SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M' # Put your Google Sheets ID here
           RANGE_NAME: 'WebFlow!A1:M9999' # put the range you wish to use from Google Sheets here
-          SECRET_NAME: 'GoogleJSONCredentials' # Modify with the name of the AWS Secret you used to store your Google Credentials
+          PARAMETER_NAME: 'GoogleJSONCredentials' # Modify with the name of the AWS Parameter you used to store your Google Credentials
           REGION_NAME: 'us-west-2' # this is the region you have your secret stored at for the google credentials
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -134,12 +134,12 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - 'secretsmanager:GetSecretValue'
+                - 'ssm:GetParameter'
+                - 'ssm:GetParameters'
               Resource: '*'
             - Effect: Allow
               Action:
                 - 'kms:Decrypt'
-                - 'kms:DescribeKey'
               Resource: '*'
 
   # Function to generate table of contents
@@ -266,7 +266,7 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref TempS3Bucket
-          SECRET: 'HuggingFaceAPISecret'
+          PARAMETER: 'HuggingFaceAPISecret'
           REGION: 'us-west-2'
           MODEL_ID: 'black-forest-labs/FLUX.1-dev'
       Policies:
@@ -275,12 +275,12 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - 'secretsmanager:GetSecretValue'
+                - 'ssm:GetParameter'
+                - 'ssm:GetParameters'
               Resource: '*'
             - Effect: Allow
               Action:
                 - 'kms:Decrypt'
-                - 'kms:DescribeKey'
               Resource: '*'
             - Effect: Allow
               Action:
@@ -298,7 +298,7 @@ Resources:
       Environment:
         Variables:
           API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/$site/media/new'
-          SECRET: 'WordpressCredentials'
+          PARAMETER: 'WordpressCredentials'
           REGION: 'us-west-2'
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -306,12 +306,12 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - 'secretsmanager:GetSecretValue'
+                - 'ssm:GetParameter'
+                - 'ssm:GetParameters'
               Resource: '*'
             - Effect: Allow
               Action:
                 - 'kms:Decrypt'
-                - 'kms:DescribeKey'
               Resource: '*'
             - Effect: Allow
               Action:
@@ -329,7 +329,7 @@ Resources:
       Environment:
         Variables:
           API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/$site/posts/new'
-          SECRET: 'WordpressCredentials'
+          PARAMETER: 'WordpressCredentials'
           REGION: 'us-west-2'
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -337,12 +337,12 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - 'secretsmanager:GetSecretValue'
+                - 'ssm:GetParameter'
+                - 'ssm:GetParameters'
               Resource: '*'
             - Effect: Allow
               Action:
                 - 'kms:Decrypt'
-                - 'kms:DescribeKey'
               Resource: '*'
 
   WriteBackGoogleSheets:
@@ -364,12 +364,12 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - 'secretsmanager:GetSecretValue'
+                - 'ssm:GetParameter'
+                - 'ssm:GetParameters'
               Resource: '*'
             - Effect: Allow
               Action:
                 - 'kms:Decrypt'
-                - 'kms:DescribeKey'
               Resource: '*'
 
   EmptyBucket:

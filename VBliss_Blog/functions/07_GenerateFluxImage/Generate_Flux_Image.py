@@ -3,7 +3,7 @@ Lambda function for generating images using the FLUX model and uploading them to
 
 This function:
 1. Receives a prompt as input through an API Gateway event.
-2. Retrieves necessary configuration from environment variables and AWS Secrets Manager.
+2. Retrieves necessary configuration from environment variables and AWS Systems Manager Parameter Store.
 3. Uses the Hugging Face Inference API to generate an image based on the provided prompt.
 4. Uploads the generated image to an S3 bucket.
 5. Returns the S3 URL of the uploaded image.
@@ -12,7 +12,7 @@ Environment variables required:
 - REGION: AWS region
 - S3_BUCKET_NAME: Name of the S3 bucket to store images
 - MODEL_ID: Hugging Face model ID for FLUX
-- SECRET: Name of the secret in AWS Secrets Manager containing the Hugging Face API token
+- PARAMETER_NAME: Name of the parameter in AWS Systems Manager Parameter Store containing the Hugging Face API token
 
 Error handling:
 - Logs detailed error information for debugging purposes.
@@ -33,13 +33,13 @@ from botocore.exceptions import ClientError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def get_secret(secret_name, region_name):
-    client = boto3.client('secretsmanager', region_name=region_name)
+def get_parameter(parameter_name, region_name):
+    ssm_client = boto3.client('ssm', region_name=region_name)
     try:
-        response = client.get_secret_value(SecretId=secret_name)
-        return response['SecretString'] if 'SecretString' in response else response['SecretBinary']
+        response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
+        return response['Parameter']['Value']
     except ClientError as e:
-        logger.error(f"Error retrieving secret: {e}")
+        logger.error(f"Error retrieving parameter: {e}")
         raise
 
 def upload_image_to_s3(image, bucket_name, region_name):
@@ -57,7 +57,7 @@ def lambda_handler(event, context):
         region_name = os.environ['REGION']
         bucket_name = os.environ['S3_BUCKET_NAME']
         model_id = os.environ['MODEL_ID']
-        token = get_secret(os.environ['SECRET'], region_name)
+        token = get_parameter(os.environ['PARAMETER_NAME'], region_name)
 
         client = InferenceClient(model=model_id, token=token)
         image = client.text_to_image(prompt)
@@ -71,4 +71,4 @@ def lambda_handler(event, context):
     
     except Exception as e:
         logger.error(f"Failed to process request: {str(e)}", exc_info=True)
-        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+        raise Exception(f"Error: {str(e)}") from e
