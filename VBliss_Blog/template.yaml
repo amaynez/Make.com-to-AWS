@@ -266,7 +266,7 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref TempS3Bucket
-          PARAMETER: 'HuggingFaceAPISecret'
+          PARAMETER_NAME: 'HuggingFaceAPISecret'
           REGION: 'us-west-2'
           MODEL_ID: 'black-forest-labs/FLUX.1-dev'
       Policies:
@@ -298,7 +298,7 @@ Resources:
       Environment:
         Variables:
           API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/$site/media/new'
-          PARAMETER: 'WordpressCredentials'
+          PARAMETER_NAME: 'WordpressCredentials'
           REGION: 'us-west-2'
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -329,7 +329,7 @@ Resources:
       Environment:
         Variables:
           API_URL: 'https://public-api.wordpress.com/rest/v1.1/sites/$site/posts/new'
-          PARAMETER: 'WordpressCredentials'
+          PARAMETER_NAME: 'WordpressCredentials'
           REGION: 'us-west-2'
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -356,7 +356,7 @@ Resources:
       Environment:
         Variables:
           SPREADSHEET_ID: '145Nn-ws9-tpSU3564oAcVbD6pNiZBDtVgENLJNaem7M' # Put your Google Sheets ID here
-          SECRET: 'GoogleJSONCredentials' # Modify with the name of the AWS Secret you used to store your Google Credentials
+          PARAMETER_NAME: 'GoogleJSONCredentials' # Modify with the name of the AWS Secret you used to store your Google Credentials
           REGION: 'us-west-2' # this is the region you have your secret stored at for the google credentials
       Policies:
         - AWSLambdaBasicExecutionRole
