@@ -24,37 +24,19 @@ import os
 from functools import lru_cache
 import boto3
 import requests
-from botocore.exceptions import ClientError
 
 @lru_cache(maxsize=1)
-def get_secret(secret_name, region_name):
+def get_parameter(parameter_name, region_name):
     """
-    Retrieve a secret from AWS Secrets Manager.
+    Retrieve a parameter from AWS Systems Manager Parameter Store.
     
-    :param secret_name: Name of the secret in Secrets Manager
-    :param region_name: AWS region where the secret is stored
-    :return: Secret value as a string
+    :param parameter_name: Name of the parameter in Parameter Store
+    :param region_name: AWS region where the parameter is stored
+    :return: Parameter value as a string
     """
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
-
-    try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
-    except ClientError as e:
-        # If there's an error, re-raise it
-        raise e
-
-    # Return the secret string directly
-    if 'SecretString' in get_secret_value_response:
-        return get_secret_value_response['SecretString']
-    else:
-        # In case the secret is binary
-        return get_secret_value_response['SecretBinary']
+    ssm = boto3.client('ssm', region_name=region_name)
+    response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+    return response['Parameter']['Value']
 
 def lambda_handler(event, context):
     """
@@ -78,8 +60,8 @@ def lambda_handler(event, context):
     summary_data = json.loads(event.get("SummaryOut", {}).get('body', '{}'))
     excerpt = summary_data.get('summary', '')
   
-    # Retrieve WordPress Credentials from Secrets Manager
-    wp_secret = json.loads(get_secret(os.environ['SECRET'], os.environ['REGION']))
+    # Retrieve WordPress Credentials from Parameter Store
+    wp_secret = json.loads(get_parameter(os.environ['PARAMETER_NAME'], os.environ['REGION']))
     
     # Prepare OAuth data for token request
     oauth_data = {

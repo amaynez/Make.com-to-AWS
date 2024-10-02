@@ -19,33 +19,21 @@ import os
 from urllib.parse import urlparse
 import logging
 
-def get_secret(secret_name, region_name):
+def get_parameter(parameter_name, region_name):
     """
-    Retrieve a secret from AWS Secrets Manager.
+    Retrieve a parameter from AWS Parameter Store.
     
-    :param secret_name: Name of the secret to retrieve
-    :param region_name: AWS region where the secret is stored
-    :return: Secret value as a string
+    :param parameter_name: Name of the parameter to retrieve
+    :param region_name: AWS region where the parameter is stored
+    :return: Parameter value as a string
     """
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
+    ssm = boto3.client('ssm', region_name=region_name)
 
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+        return response['Parameter']['Value']
     except ClientError as e:
         raise e
-
-    # Return the secret string directly
-    if 'SecretString' in get_secret_value_response:
-        return get_secret_value_response['SecretString']
-    else:
-        # In case the secret is binary
-        return get_secret_value_response['SecretBinary']
 
 def get_image_from_s3(s3_url, region_name='us-west-2'):
     """
@@ -105,7 +93,7 @@ def lambda_handler(event, context):
         image_data = get_image_from_s3(s3_image_url, region)
 
         # Retrieve WordPress Credentials
-        wp_secret = json.loads(get_secret(os.environ['SECRET'], region))
+        wp_secret = json.loads(get_parameter(os.environ['PARAMETER_NAME'], region))
         
         # Authenticate and get access token
         token = get_wordpress_token(wp_secret)
